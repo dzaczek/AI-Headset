@@ -1,0 +1,96 @@
+/* Modes */
+"mode.pass" = "PASS — relay my voice";
+"mode.agent" = "AGENT — agent speaks for me";
+"mode.mute" = "MUTE — silence";
+
+/* Devices */
+"device.output" = "Monitoring output";
+"device.input" = "Microphone input";
+
+/* Agent */
+"agent.picker" = "Agent";
+"agent.connect" = "Connect agent";
+"agent.disconnect" = "Disconnect agent";
+"agent.loading" = "Loading…";
+"agent.retry" = "Retry";
+"agent.none" = "No agents — check your API key";
+"agent.state.disconnected" = "disconnected";
+"agent.state.connecting" = "connecting…";
+"agent.state.connected" = "connected";
+"agent.state.reconnecting" = "reconnecting…";
+
+"meter.toHeadphones" = "→ headphones ";
+"mic.denied" = "Microphone blocked — PASS relays silence. Click to open Settings.";
+"meter.mic" = "  microphone ";
+"meter.toAgent" = "→ to agent  ";
+"meter.fromAgent" = "← from agent";
+
+/* Status lines */
+"status.audio" = "Audio: %@";
+"status.agent" = "Agent: %@";
+"status.starting" = "starting…";
+"status.active" = "active";
+"status.error" = "error";
+
+/* Menu */
+"menu.testTone" = "Test sound in headphones";
+"menu.settings" = "Settings…";
+"menu.quit" = "Quit";
+
+/* Alerts */
+"alert.configure.title" = "Configure the agent";
+"alert.configure.body" = "Set an Agent ID (and an API key for private agents) in Settings before switching to AGENT mode.";
+"alert.configure.open" = "Open Settings";
+"alert.cancel" = "Cancel";
+
+/* Settings window */
+"settings.title" = "AI Headset Settings";
+"settings.agent" = "Agent:";
+"settings.agentManual" = "or enter an agent ID manually (public agents, no API key):";
+"settings.agentID" = "Agent ID:";
+"settings.apiKey" = "ElevenLabs API Key:";
+"settings.keyHint" = "The API key is only required for private agents. Stored locally in this Mac's Keychain, never in project files.";
+"settings.prompt" = "Agent system prompt (who it is, how it behaves):";
+"settings.promptHint" = "Loaded from and saved directly to your ElevenLabs account via their REST API — that is the single source of truth; this app stores nothing locally beyond this edit field.";
+"settings.reload" = "Load from ElevenLabs";
+"settings.save" = "Save";
+"settings.close" = "Close";
+"settings.loading" = "Loading…";
+"settings.loaded" = "Loaded from ElevenLabs.";
+"settings.loadError" = "Load error: %@";
+"settings.saving" = "Saving prompt…";
+"settings.saved" = "Prompt saved to ElevenLabs.";
+"settings.saveError" = "Save error: %@";
+
+/* Errors */
+"error.notConfigured" = "Set an Agent ID and API key before editing the prompt.";
+"error.http" = "ElevenLabs returned HTTP %d: %@";
+"error.invalidResponse" = "Unexpected response shape from ElevenLabs (see the comment in AgentConfigClient.swift).";
+"error.missingAgentID" = "No agent ID configured";
+
+/* Turn latency + config health check */
+"status.latency" = "Turn latency: %.2f s";
+"health.allOK" = "Agent config: OK";
+"health.warnings" = "Agent config: %d warning(s)";
+"health.recheck" = "Re-check";
+"health.formatsOK" = "Audio format pcm_16000 both ways";
+"health.formatsBad" = "Audio format must be pcm_16000 (input: %@, output: %@)";
+"health.maxDuration" = "Call cuts off after %d min — raise max_duration_seconds";
+"health.firstMessage" = "Greeting \"%@\" fires mid-call — clear first_message";
+"health.softTimeoutOK" = "Filler audio at %.1f s, before the safety threshold";
+"health.softTimeoutLate" = "Filler audio at %.1f s — after the dead man's switch fires";
+
+/* Agent panel: persona + live hints */
+"hint.title" = "Agent";
+"hint.persona" = "Role and character (saved to ElevenLabs):";
+"hint.personaLoad" = "Load";
+"hint.personaSave" = "Save character";
+"hint.personaSaved" = "Character saved — applies to the next conversation.";
+"hint.prompt" = "Hint during the conversation:";
+"hint.placeholder" = "e.g. the client is asking about backup pricing — do not commit";
+"hint.explain" = "Goes in as background context: does not interrupt what the agent is saying, and is taken into account from the next turn on.";
+"hint.send" = "Send hint";
+"hint.sent" = "Hint sent.";
+"hint.ready" = "Agent connected — hints go through live.";
+"hint.notConnected" = "Agent not connected — connect it first (menu → Connect agent).";
+"menu.agentPanel" = "Agent…";

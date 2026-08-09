@@ -1,0 +1,22 @@
+#!/bin/bash
+# Faza 5.4 (plan), adjusted per project memory: `launchctl kickstart -k`
+# is SIP-blocked on at least some macOS builds (error 150). `killall`
+# works instead -- coreaudiod is launchd-supervised and relaunches
+# automatically, which is what actually gets the new/updated driver
+# bundle scanned.
+set -e
+
+killall coreaudiod 2>/dev/null || true
+
+# The installer runs as root; $USER doesn't reliably name the actual
+# logged-in user in that context, so ask the console directly.
+CONSOLE_USER="$(stat -f%Su /dev/console)"
+if [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != "root" ]; then
+  CONSOLE_UID="$(id -u "$CONSOLE_USER")"
+  LAUNCH_AGENT_PLIST="/Library/LaunchAgents/cat.sysop.aiheadset.plist"
+  if [ -f "$LAUNCH_AGENT_PLIST" ]; then
+    launchctl bootstrap "gui/$CONSOLE_UID" "$LAUNCH_AGENT_PLIST" 2>/dev/null || true
+  fi
+fi
+
+exit 0

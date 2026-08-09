@@ -1,0 +1,96 @@
+/* Modes */
+"mode.pass" = "PASS — przekazuj mój głos";
+"mode.agent" = "AGENT — agent rozmawia za mnie";
+"mode.mute" = "MUTE — cisza";
+
+/* Devices */
+"device.output" = "Wyjście monitorujące";
+"device.input" = "Wejście mikrofonu";
+
+/* Agent */
+"agent.picker" = "Agent";
+"agent.connect" = "Połącz agenta";
+"agent.disconnect" = "Rozłącz agenta";
+"agent.loading" = "Wczytywanie…";
+"agent.retry" = "Spróbuj ponownie";
+"agent.none" = "Brak agentów — sprawdź API Key";
+"agent.state.disconnected" = "rozłączony";
+"agent.state.connecting" = "łączenie…";
+"agent.state.connected" = "połączony";
+"agent.state.reconnecting" = "ponawianie…";
+
+"meter.toHeadphones" = "→ słuchawki ";
+"mic.denied" = "Mikrofon zablokowany — PASS przekazuje ciszę. Kliknij, aby otworzyć Ustawienia.";
+"meter.mic" = "  mikrofon   ";
+"meter.toAgent" = "→ do agenta ";
+"meter.fromAgent" = "← od agenta ";
+
+/* Status lines */
+"status.audio" = "Audio: %@";
+"status.agent" = "Agent: %@";
+"status.starting" = "uruchamianie…";
+"status.active" = "aktywne";
+"status.error" = "błąd";
+
+/* Menu */
+"menu.testTone" = "Test dźwięku w słuchawkach";
+"menu.settings" = "Ustawienia…";
+"menu.quit" = "Zakończ";
+
+/* Alerts */
+"alert.configure.title" = "Skonfiguruj agenta";
+"alert.configure.body" = "Ustaw Agent ID (i API Key dla agentów prywatnych) w Ustawieniach, zanim przełączysz na tryb AGENT.";
+"alert.configure.open" = "Otwórz ustawienia";
+"alert.cancel" = "Anuluj";
+
+/* Settings window */
+"settings.title" = "Ustawienia AI Headset";
+"settings.agent" = "Agent:";
+"settings.agentManual" = "albo wpisz ID agenta ręcznie (agenci publiczni, bez API Key):";
+"settings.agentID" = "Agent ID:";
+"settings.apiKey" = "ElevenLabs API Key:";
+"settings.keyHint" = "API Key jest wymagany tylko dla agentów prywatnych. Zapisywany lokalnie w Keychainie tego Maca, nigdy w plikach projektu.";
+"settings.prompt" = "System prompt agenta (kim jest, jak się zachowuje):";
+"settings.promptHint" = "Wczytywany i zapisywany bezpośrednio na koncie ElevenLabs przez ich REST API — to jedyne źródło prawdy, appka niczego nie trzyma lokalnie poza tym polem edycji.";
+"settings.reload" = "Wczytaj z ElevenLabs";
+"settings.save" = "Zapisz";
+"settings.close" = "Zamknij";
+"settings.loading" = "Wczytywanie…";
+"settings.loaded" = "Wczytano z ElevenLabs.";
+"settings.loadError" = "Błąd wczytywania: %@";
+"settings.saving" = "Zapisywanie prompta…";
+"settings.saved" = "Prompt zapisany na ElevenLabs.";
+"settings.saveError" = "Błąd zapisu prompta: %@";
+
+/* Errors */
+"error.notConfigured" = "Ustaw Agent ID i API Key przed edycją prompta.";
+"error.http" = "ElevenLabs zwrócił HTTP %d: %@";
+"error.invalidResponse" = "Nieoczekiwany kształt odpowiedzi z ElevenLabs (patrz komentarz w AgentConfigClient.swift).";
+"error.missingAgentID" = "Nie ustawiono Agent ID";
+
+/* Turn latency + config health check */
+"status.latency" = "Latencja tury: %.2f s";
+"health.allOK" = "Konfiguracja agenta: OK";
+"health.warnings" = "Konfiguracja agenta: %d ostrzeżeń";
+"health.recheck" = "Sprawdź ponownie";
+"health.formatsOK" = "Format audio pcm_16000 w obie strony";
+"health.formatsBad" = "Format audio musi być pcm_16000 (wejście: %@, wyjście: %@)";
+"health.maxDuration" = "Rozmowa urwie się po %d min — podnieś max_duration_seconds";
+"health.firstMessage" = "Powitanie \"%@\" odezwie się w środku rozmowy — wyczyść first_message";
+"health.softTimeoutOK" = "Filler audio po %.1f s, przed progiem zabezpieczenia";
+"health.softTimeoutLate" = "Filler audio po %.1f s — już po zadziałaniu dead man's switcha";
+
+/* Agent panel: persona + live hints */
+"hint.title" = "Agent";
+"hint.persona" = "Rola i charakter (zapisywane na ElevenLabs):";
+"hint.personaLoad" = "Wczytaj";
+"hint.personaSave" = "Zapisz charakter";
+"hint.personaSaved" = "Charakter zapisany — zadziała od następnej rozmowy.";
+"hint.prompt" = "Podpowiedź w trakcie rozmowy:";
+"hint.placeholder" = "np. klient pyta o cenę backupu — nie składaj obietnic";
+"hint.explain" = "Wchodzi jako kontekst w tle: nie przerywa tego, co agent właśnie mówi, i jest uwzględniana od kolejnej wypowiedzi.";
+"hint.send" = "Wyślij podpowiedź";
+"hint.sent" = "Podpowiedź wysłana.";
+"hint.ready" = "Agent połączony — podpowiedzi idą na żywo.";
+"hint.notConnected" = "Agent nie jest połączony — najpierw go połącz (menu → Połącz agenta).";
+"menu.agentPanel" = "Agent…";

@@ -2,17 +2,19 @@
 
 # 🎧 AI Headset
 
-**Wirtualny zestaw słuchawkowy dla macOS, który potrafi mówić za Ciebie.**
+**A virtual headset for macOS that can talk for you.**
 
-Dla Zooma, Teamsa i Signala wygląda jak zwykły headset USB.
-W środku przepuszcza dźwięk przez własny demon, który na Twoje żądanie
-podstawia agenta konwersacyjnego ElevenLabs zamiast Twojego mikrofonu.
+To Zoom, Teams and Signal it looks like an ordinary USB headset.
+Inside, audio flows through a daemon that — on your command — puts an
+ElevenLabs conversational agent on the line in place of your microphone.
 
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Universal](https://img.shields.io/badge/binary-arm64%20%2B%20x86__64-blue)](#)
-[![Swift + C11](https://img.shields.io/badge/kod-Swift%20%2B%20C11-orange?logo=swift&logoColor=white)](#)
-[![Notarized](https://img.shields.io/badge/Apple-notaryzowany-success)](#)
-[![Version](https://img.shields.io/badge/wersja-0.5.0-informational)](VERSION)
+[![Swift + C11](https://img.shields.io/badge/code-Swift%20%2B%20C11-orange?logo=swift&logoColor=white)](#)
+[![Notarized](https://img.shields.io/badge/Apple-notarized-success)](#)
+[![Version](https://img.shields.io/badge/version-0.5.0-informational)](VERSION)
+
+**English** · [Polski](README.pl.md)
 
 </div>
 
@@ -22,191 +24,193 @@ podstawia agenta konwersacyjnego ElevenLabs zamiast Twojego mikrofonu.
       Zoom · Teams · Signal · Meet
                   ↕
          ┌──────────────────┐
-         │   AI Headset     │   ← widoczne dla aplikacji, transport USB
+         │   AI Headset     │   ← what apps see, USB transport type
          └──────────────────┘
-                  ↕              dwa ring buffery, na krzyż
+                  ↕              two ring buffers, cross-wired
          ┌──────────────────┐
-         │ AI Headset Bridge│   ← ukryte, tylko dla demona
+         │ AI Headset Bridge│   ← hidden, for the daemon only
          └──────────────────┘
                   ↕
          ┌──────────────────┐
          │  AIHeadset.app   │   ← aggregate device + routing
          └──────────────────┘
              ↙          ↘
-   Twoje słuchawki      Agent ElevenLabs
+     Your headphones    ElevenLabs agent
                         (WebSocket, PCM 16 kHz)
 ```
 
-Dwa urządzenia zamiast jednego, bo aplikacja i demon nie mogą czytać z tego
-samego strumienia wejściowego — demon musi wejść w środek.
+Two devices instead of one, because the app and the daemon cannot both read
+from the same input stream — the daemon has to sit in the middle.
 
-## Trzy tryby, jeden skrót
+## Three modes, one shortcut
 
-| | Rozmówca słyszy | Agent słyszy | Ty słyszysz |
+| | The caller hears | The agent hears | You hear |
 |---|---|---|---|
-| 🌊 **PASS** | ciebie | rozmówcę | rozmówcę |
-| 🧠 **AGENT** | **agenta** | rozmówcę | rozmówcę **+ agenta** |
-| 🔇 **MUTE** | ciszę | rozmówcę | rozmówcę |
+| 🌊 **PASS** | you | the caller | the caller |
+| 🧠 **AGENT** | **the agent** | the caller | the caller **+ the agent** |
+| 🔇 **MUTE** | silence | the caller | the caller |
 
-`⌘⇧A` przełącza PASS ↔ AGENT — celowo bez blokowania na czymkolwiek, więc
-działa nawet gdy WebSocket wisi. Ikona w pasku menu ma **inny glif dla każdego
-trybu** i świeci na fioletowo, gdy agent właśnie mówi Twoim kanałem.
+`⌘⇧A` toggles PASS ↔ AGENT — deliberately non-blocking, so it still works when
+the WebSocket is hung. The menu bar icon uses **a distinct glyph per mode** and
+turns purple while the agent is actually speaking on your channel.
 
-## Co potrafi
+## What it does
 
-- **Podpowiedzi na żywo** — małe pływające okno nad Teamsem; wpisujesz „klient
-  pyta o cenę, nie obiecuj", agent uwzględnia to od następnej wypowiedzi, bez
-  przerywania bieżącej
-- **Charakter agenta pod ręką** — rola i osobowość edytowane w aplikacji,
-  zapisywane wprost na koncie ElevenLabs
-- **Mierniki ruchu** — cztery poziomy (do agenta, od agenta, do słuchawek,
-  mikrofon), żeby ciszę dało się zdiagnozować patrzeniem, a nie zgadywaniem
-- **Kontrola konfiguracji** — aplikacja czyta ustawienia agenta i ostrzega, gdy
-  kłócą się z jej wymaganiami (format audio, długość rozmowy, powitanie)
-- **Zabezpieczenia w tle** — dead man's switch przy zerwanym połączeniu,
-  watchdog zegara, filtr blokujący obietnice o cenach i terminach
-- **Dwa języki** — polski i angielski, wybierane po ustawieniach systemu
+- **Live hints** — a small floating window above Teams; you type "client is
+  asking about pricing, don't commit" and the agent takes it into account from
+  its next turn, without interrupting what it is saying
+- **Agent persona at hand** — role and character edited in the app, saved
+  straight to your ElevenLabs account
+- **Traffic meters** — four levels (to agent, from agent, to headphones,
+  microphone), so silence can be diagnosed by looking rather than guessing
+- **Config health check** — the app reads the agent's settings and flags the
+  ones that conflict with its own requirements (audio format, call length,
+  greeting)
+- **Safety nets** — dead man's switch on a dropped connection, clock drift
+  watchdog, and a filter that blocks promises about prices and deadlines
+- **Two languages** — English and Polish, picked from your system settings
 
 ---
 
-## Instalacja
+## Install
 
-### Z gotowej paczki
+### From a release package
 
 ```bash
 unzip AIHeadset-0.5.0-*.zip
 cd dist && ./install.sh
 ```
 
-Sterownik ląduje w `/Library/Audio/Plug-Ins/HAL/`, aplikacja w `/Applications/`,
-`coreaudiod` się restartuje (sekunda ciszy w systemie — to normalne).
+The driver goes to `/Library/Audio/Plug-Ins/HAL/`, the app to `/Applications/`,
+and `coreaudiod` restarts (one second of system-wide silence — that's normal).
 
 > [!IMPORTANT]
-> Uruchamiaj z `/Applications`, nie z rozpakowanego folderu. macOS stosuje
-> wtedy App Translocation i uprawnienia nie mają się gdzie zapisać.
+> Launch it from `/Applications`, not from the unpacked folder. macOS applies
+> App Translocation otherwise, and permissions have nowhere to persist.
 
-Po instalacji: zgódź się na **mikrofon**, nadaj **Accessibility** dla skrótu
-klawiszowego, wpisz **API Key** (zostaje w Keychainie tej maszyny, nie wędruje
-z paczką).
+After installing: allow **microphone** access, grant **Accessibility** for the
+keyboard shortcut, and enter your **API key** (it stays in this machine's
+Keychain and does not travel with the package).
 
-### Ze źródeł
+### From source
 
 ```bash
-cp packaging/.env.example packaging/.env   # Apple ID, Team ID, certyfikat
-make driver && make install                # sterownik HAL (wymaga sudo)
-make run                                   # aplikacja, ~2 s
+cp packaging/.env.example packaging/.env   # Apple ID, Team ID, certificate
+make driver && make install                # HAL driver (needs sudo)
+make run                                   # the app, ~2 s
 ```
 
 > [!NOTE]
-> **Sterownik wymaga notaryzacji nawet do testów lokalnych.** `coreaudiod`
-> ładuje pluginy HAL przez piaskownicowy proces XPC, który egzekwuje to przez
-> AMFI. Aplikacja lokalnie notaryzacji nie potrzebuje.
+> **The driver must be notarized even for local testing.** `coreaudiod` loads
+> HAL plug-ins through a sandboxed XPC helper that enforces this via AMFI. The
+> app itself does not need notarization to run locally.
 
 ```bash
-./packaging/make_dist.sh    # build + podpis + notaryzacja + zip, jedna komenda
+./packaging/make_dist.sh    # build + sign + notarize + zip, one command
 ```
 
 ---
 
-## Konfiguracja
+## Setup
 
-Ikona w pasku menu → **Agent…** (`⌘⇧A`) i **Ustawienia…** (`⌘,`)
+Menu bar icon → **Agent…** (`⌘⇧A`) and **Settings…** (`⌘,`)
 
-| Gdzie | Co ustawiasz |
+| Where | What to select |
 |---|---|
-| Ustawienia Dźwięku macOS | **Twoje słuchawki** — nie AI Headset |
-| Teams / Zoom → mikrofon i głośnik | **AI Headset** |
-| Menu → Wyjście monitorujące | słuchawki, na których słyszysz rozmowę |
-| Menu → Wejście mikrofonu | Twój fizyczny mikrofon |
+| macOS Sound settings | **your headphones** — not AI Headset |
+| Teams / Zoom → mic and speaker | **AI Headset** |
+| Menu → Monitoring output | the headphones you listen on |
+| Menu → Microphone input | your physical microphone |
 
 > [!WARNING]
-> Nie ustawiaj `AI Headset` jako domyślnego urządzenia systemu. Wszystkie
-> dźwięki — powiadomienia, muzyka — trafiłyby wtedy do agenta jako głos
-> rozmówcy.
+> Do not set `AI Headset` as the system default device. Every sound —
+> notifications, music — would then reach the agent as if it were the caller's
+> voice.
 
-### Po stronie ElevenLabs
+### On the ElevenLabs side
 
-Aplikacja jest mostem audio; kim agent jest, jakiego używa modelu i co wie —
-konfiguruje się na [elevenlabs.io](https://elevenlabs.io) → Conversational AI.
+This app is an audio bridge; who the agent is, which model it uses and what it
+knows are configured at [elevenlabs.io](https://elevenlabs.io) → Conversational AI.
 
-**Bez tego nie będzie dźwięku:**
+**Without these there will be no audio:**
 
-| Ustawienie | Wartość |
+| Setting | Value |
 |---|---|
 | Input audio format | `PCM 16000 Hz` |
 | Output audio format | `PCM 16000 Hz` |
 
-Warto też podnieść `max_duration_seconds` (domyślne 20 minut urwie rozmowę),
-wyczyścić `first_message` (agent wchodzi w **trwającą** rozmowę, powitanie
-zabrzmi w środku zdania) i trzymać `reasoning_effort` nisko — model rozumujący
-potrafi odpowiadać 7 sekund, co w rozmowie głosowej jest nie do przyjęcia.
+Also worth doing: raise `max_duration_seconds` (the 20-minute default cuts calls
+off), clear `first_message` (the agent joins a conversation **already in
+progress**, so a greeting lands mid-sentence), and keep `reasoning_effort` low —
+a reasoning model can take 7 seconds to answer, which is unusable in a voice
+call.
 
 ---
 
-## Diagnostyka
+## Diagnostics
 
 ```bash
-make logs                                                   # na żywo
+make logs                                                   # live
 log show --last 10m --predicate 'subsystem == "cat.sysop.aiheadset"'
 ```
 
-Menu → **Test dźwięku w słuchawkach** wysyła ton prosto na wyjście, z pominięciem
-Teamsa i sterownika — rozcina problem na pół bez zgadywania.
+Menu → **Test sound in headphones** sends a tone straight to the output,
+bypassing Teams and the driver — it cuts the problem in half without guessing.
 
 ---
 
-## Stan projektu
+## Project status
 
-Sterownik, routing i tryby działają i są przetestowane na żywym sprzęcie.
-Poniżej to, czego **nie ma** — świadomie i jawnie:
+The driver, routing and modes work and have been tested against real hardware.
+Below is what is **missing** — deliberately and openly:
 
-| Element | Stan |
+| Component | State |
 |---|---|
-| `Transcript` | napisany, nieuruchamiany — rozmowy nie są zapisywane |
-| `ConsentAnnouncer` | napisany, nieuruchamiany — komunikat o nagrywaniu nie odtwarza się sam |
-| `CommitmentFilter` | wzorce **tylko po polsku**; w innym języku zostaje sama warstwa promptu |
-| Pola protokołu ElevenLabs | `user_transcript`, `agent_response`, `vad_score`, `ping` — **niezweryfikowane** wobec dokumentacji (oznaczone w kodzie) |
-| Instalator `.pkg` | wymaga certyfikatu *Developer ID Installer*; działa `make_dist.sh` (zip) |
-| Test godzinnej rozmowy | **nieprzeprowadzony** — plan nazywa go bramką jakościową |
+| `Transcript` | written, not wired up — conversations are not saved |
+| `ConsentAnnouncer` | written, not wired up — the recording notice does not play by itself |
+| `CommitmentFilter` | patterns are **Polish only**; in other languages only the prompt layer remains |
+| ElevenLabs protocol fields | `user_transcript`, `agent_response`, `vad_score`, `ping` — **unverified** against the docs (marked in code) |
+| `.pkg` installer | needs a *Developer ID Installer* certificate; `make_dist.sh` (zip) works today |
+| Hour-long call test | **not done** — the plan calls it the quality gate |
 
 > [!CAUTION]
-> **Nagrywanie i zgoda.** Aplikacja pozwala podstawić syntetyczny głos na
-> rozmowie z drugą osobą, a ElevenLabs przetwarza dźwięk po swojej stronie.
-> Poinformowanie rozmówcy jest po Twojej stronie — projekt tego **nie
-> egzekwuje**, bo `ConsentAnnouncer` nie jest podpięty. W wielu jurysdykcjach
-> nagrywanie bez wiedzy drugiej strony jest niezgodne z prawem.
+> **Recording and consent.** This app puts a synthetic voice into a conversation
+> with another person, and ElevenLabs processes the audio on their side.
+> Informing the other party is on you — the project does **not** enforce it,
+> because `ConsentAnnouncer` is not wired up. In many jurisdictions recording
+> someone without their knowledge is unlawful.
 
 ---
 
-## Struktura
+## Layout
 
 ```
-driver/      sterownik HAL (C11) — dwa urządzenia, ring buffery lock-free
-daemon/      aplikacja (Swift/AppKit) — aggregate device, routing, agent
-tools/       jednorazowe narzędzia diagnostyczne (nie część produktu)
-packaging/   podpisywanie, notaryzacja, dystrybucja
-VERSION      jedyne miejsce z numerem wersji
+driver/      HAL driver (C11) — two devices, lock-free ring buffers
+daemon/      the app (Swift/AppKit) — aggregate device, routing, agent
+tools/       throwaway diagnostics (not part of the product)
+packaging/   signing, notarization, distribution
+VERSION      the single source of the version number
 ```
 
-| Skrypt | Do czego |
+| Command | Purpose |
 |---|---|
-| `make run` | build + podpis + uruchomienie, ~2 s |
-| `make logs` | logi aplikacji na żywo |
-| `packaging/make_dist.sh` | pełna paczka do przeniesienia (build → notaryzacja → zip) |
-| `packaging/make_pkg.sh` | instalator `.pkg` (wymaga certyfikatu Installer) |
+| `make run` | build + sign + launch, ~2 s |
+| `make logs` | live app logs |
+| `packaging/make_dist.sh` | full distributable (build → notarize → zip) |
+| `packaging/make_pkg.sh` | `.pkg` installer (needs an Installer certificate) |
 
-Wydanie: zmień `VERSION`, uruchom `packaging/make_dist.sh`.
+Releasing: bump `VERSION`, run `packaging/make_dist.sh`.
 
 > [!TIP]
-> Narzędzia w `tools/` dotykające Keychaina wymagają zmiennej
-> `AIHEADSET_TEST_KEYCHAIN_SUFFIX` i bez niej odmawiają startu. Zapis do
-> produkcyjnego wpisu z innej binarki przepina uprawnienia i po cichu odcina
-> aplikację od jej własnego klucza API — zdarzyło się naprawdę.
+> Tools in `tools/` that touch the Keychain require `AIHEADSET_TEST_KEYCHAIN_SUFFIX`
+> and refuse to run without it. Writing to the production entry from a different
+> binary rebinds its ACL and silently locks the app out of its own API key —
+> this actually happened.
 
 ---
 
 <div align="center">
 
-Projekt techniczny: [`ai-headset-macos-plan.md`](ai-headset-macos-plan.md)
+Technical design doc (Polish): [`ai-headset-macos-plan.md`](ai-headset-macos-plan.md)
 
 </div>

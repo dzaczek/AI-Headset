@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Bez tego uprawnienia macOS przy włączonym hardened runtime
+	     (a ten jest wymagany do notaryzacji) NIE POKAŻE nawet pytania
+	     o dostęp do mikrofonu: tccd loguje wtedy "requires entitlement
+	     com.apple.security.device.audio-input but it is missing" i
+	     "Policy disallows prompt", a aplikacja nie pojawia się na
+	     liście w Ustawieniach → Prywatność → Mikrofon. Sam
+	     NSMicrophoneUsageDescription w Info.plist to za mało. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+</dict>
+</plist>

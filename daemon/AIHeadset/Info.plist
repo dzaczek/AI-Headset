@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<!-- Advertised so macOS offers Polish to Polish-locale users and
+	     falls back to English otherwise. Strings live in
+	     Contents/Resources/{en,pl}.lproj/Localizable.strings. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>pl</string>
+	</array>
+	<key>CFBundleExecutable</key>
+	<string>AIHeadset</string>
+	<key>CFBundleIdentifier</key>
+	<string>cat.sysop.aiheadset</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>AIHeadset</string>
+	<key>CFBundleDisplayName</key>
+	<string>AI Headset</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>sysop.cat</string>
+
+	<!-- Menu bar only: no dock icon, no main window (plan section 4). -->
+	<key>LSUIElement</key>
+	<true/>
+
+	<!-- Required for the physical mic sub-device / PASS mode relay
+	     to get a TCC prompt instead of silently failing (plan 5.5). -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AI Headset routes your microphone through the virtual headset device so apps like Zoom and Teams can use it.</string>
+</dict>
+</plist>
