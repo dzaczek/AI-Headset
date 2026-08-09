@@ -1,0 +1,59 @@
+# ── Wyniki budowania ────────────────────────────────────────────────
+build/
+*.o
+*.dSYM/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# ── Poświadczenia i klucze ──────────────────────────────────────────
+# packaging/.env trzyma SUPERSEC (hasło aplikacji do notaryzacji).
+# Wyciek takiego pliku daje obcemu prawo notaryzowania oprogramowania
+# pod Twoim Developer ID, więc wzorce są celowo szerokie.
+.env
+.env.*
+*.env
+!*.env.example
+
+# Certyfikaty i klucze prywatne
+*.p12
+*.pfx
+*.pem
+*.key
+*.keychain
+*.keychain-db
+*.mobileprovision
+*.provisionprofile
+*.cer
+*.certSigningRequest
+
+# Typowe nazwy plików z sekretami
+*secret*
+*secrets*
+*credentials*
+!**/*credentials*.md
+apikey*
+api_key*
+*.token
+
+# ── Narzędzia AI ────────────────────────────────────────────────────
+# Katalogi asystentów potrafią trzymać transkrypty rozmów, ścieżki i
+# fragmenty kodu — poza repozytorium.
+.claude/
+.cursor/
+.aider*
+.continue/
+.windsurfrules
+.github/copilot-instructions.md
+*.aider.chat.history.md
+.specstory/
+
+# ── System i edytory ────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.idea/
+.vscode/
+*.swp
+*~
