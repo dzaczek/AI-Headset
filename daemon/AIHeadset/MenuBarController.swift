@@ -167,6 +167,16 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             menu.addItem(item)
         }
 
+        // Zaraz pod trybami: to jest okno używane W TRAKCIE rozmowy,
+        // więc nie może być schowane przy ustawieniach. Skrót NIE ⌘⇧A --
+        // tamten jest globalnym przełącznikiem PASS↔AGENT i przechwytuje
+        // zdarzenie, zanim dojdzie do menu.
+        menu.addItem(.separator())
+        let panelItem = NSMenuItem(title: L("menu.agentPanel"), action: #selector(openAgentPanel), keyEquivalent: "h")
+        panelItem.keyEquivalentModifierMask = [.command, .shift]
+        panelItem.target = self
+        menu.addItem(panelItem)
+
         menu.addItem(.separator())
         menu.addItem(buildDevicePickerItem(title: L("device.output"), scope: kAudioObjectPropertyScopeOutput,
                                             current: outputDeviceUID, action: #selector(selectOutputDevice(_:))))
@@ -174,10 +184,6 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                                             current: inputDeviceUID, action: #selector(selectInputDevice(_:))))
 
         menu.addItem(.separator())
-        let panelItem = NSMenuItem(title: L("menu.agentPanel"), action: #selector(openAgentPanel), keyEquivalent: "a")
-        panelItem.keyEquivalentModifierMask = [.command, .shift]
-        panelItem.target = self
-        menu.addItem(panelItem)
         menu.addItem(NSMenuItem(title: L("menu.settings"), action: #selector(openSettingsMenuAction), keyEquivalent: ","))
         let toneItem = NSMenuItem(title: L("menu.testTone"), action: #selector(playTestTone), keyEquivalent: "")
         toneItem.target = self

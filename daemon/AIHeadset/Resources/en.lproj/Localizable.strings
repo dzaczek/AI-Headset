@@ -8,7 +8,7 @@
 "device.input" = "Microphone input";
 
 /* Agent */
-"agent.picker" = "Agent";
+"agent.picker" = "Choose agent";
 "agent.connect" = "Connect agent";
 "agent.disconnect" = "Disconnect agent";
 "agent.loading" = "Loading…";
@@ -93,4 +93,4 @@
 "hint.sent" = "Hint sent.";
 "hint.ready" = "Agent connected — hints go through live.";
 "hint.notConnected" = "Agent not connected — connect it first (menu → Connect agent).";
-"menu.agentPanel" = "Agent…";
+"menu.agentPanel" = "💬 Hints and persona…";

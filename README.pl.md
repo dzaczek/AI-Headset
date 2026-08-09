@@ -12,7 +12,7 @@ podstawia agenta konwersacyjnego ElevenLabs zamiast Twojego mikrofonu.
 [![Universal](https://img.shields.io/badge/binary-arm64%20%2B%20x86__64-blue)](#)
 [![Swift + C11](https://img.shields.io/badge/kod-Swift%20%2B%20C11-orange?logo=swift&logoColor=white)](#)
 [![Notarized](https://img.shields.io/badge/Apple-notaryzowany-success)](#)
-[![Version](https://img.shields.io/badge/wersja-0.5.0-informational)](VERSION)
+[![Version](https://img.shields.io/badge/wersja-0.5.3-informational)](VERSION)
 
 **Polski** · [English](README.md)
 
@@ -76,7 +76,7 @@ trybu** i świeci na fioletowo, gdy agent właśnie mówi Twoim kanałem.
 ### Z gotowej paczki
 
 ```bash
-unzip AIHeadset-0.5.0-*.zip
+unzip AIHeadset-0.5.3-*.zip
 cd dist && ./install.sh
 ```
 
@@ -112,7 +112,7 @@ make run                                   # aplikacja, ~2 s
 
 ## Konfiguracja
 
-Ikona w pasku menu → **Agent…** (`⌘⇧A`) i **Ustawienia…** (`⌘,`)
+Ikona w pasku menu → **💬 Podpowiedzi i charakter…** (`⌘⇧H`) i **Ustawienia…** (`⌘,`)
 
 | Gdzie | Co ustawiasz |
 |---|---|
@@ -209,6 +209,6 @@ Wydanie: zmień `VERSION`, uruchom `packaging/make_dist.sh`.
 
 <div align="center">
 
-Projekt techniczny: [`ai-headset-macos-plan.md`](ai-headset-macos-plan.md)
+Zbudowane według szczegółowego projektu technicznego (niepublikowanego).
 
 </div>

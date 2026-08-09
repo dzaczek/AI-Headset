@@ -19,11 +19,13 @@ import Foundation
 /// docs before wiring this to a real agent_id.
 /// ============================================================
 
-enum AgentConnectionState {
+enum AgentConnectionState: String, CustomStringConvertible {
     case disconnected
     case connecting
     case connected
     case reconnecting
+
+    var description: String { rawValue }
 }
 
 protocol ElevenLabsClientDelegate: AnyObject {
@@ -45,7 +47,11 @@ final class ElevenLabsClient: NSObject {
     weak var delegate: ElevenLabsClientDelegate?
 
     private(set) var state: AgentConnectionState = .disconnected {
-        didSet { delegate?.elevenLabsClient(self, didChangeState: state) }
+        didSet {
+            guard oldValue != state else { return }
+            Log.info("stan agenta: \(state)")
+            delegate?.elevenLabsClient(self, didChangeState: state)
+        }
     }
 
     private let session: URLSession
@@ -82,6 +88,9 @@ final class ElevenLabsClient: NSObject {
         state = reconnectAttempt == 0 ? .connecting : .reconnecting
         do {
             let url = try await signedURLProvider()
+            // Host bez części poufnej -- podpisany URL zawiera token,
+            // którego nie wolno wypisywać do logu systemowego.
+            Log.info("łączę z agentem: \(url.host ?? "?")\(url.path)")
             let task = session.webSocketTask(with: url)
             webSocketTask = task
             task.resume()
@@ -89,6 +98,11 @@ final class ElevenLabsClient: NSObject {
             reconnectAttempt = 0
             receiveNext()
         } catch {
+            // Najczęstsza przyczyna: nie udało się pobrać podpisanego
+            // URL-a (zły klucz, brak uprawnień do agenta, brak sieci).
+            // Bez tego wpisu awaria była niewidoczna -- kod po cichu
+            // przechodził do ponawiania.
+            Log.error("nie udało się połączyć z agentem: \(error)")
             await scheduleReconnect()
         }
     }
@@ -100,6 +114,7 @@ final class ElevenLabsClient: NSObject {
         reconnectAttempt += 1
         // Capped exponential backoff: 2, 4, 8, 16, 30, 30, ... seconds.
         let delaySeconds = min(30.0, pow(2.0, Double(reconnectAttempt)))
+        Log.info("ponawiam połączenie za \(Int(delaySeconds)) s (próba \(reconnectAttempt))")
         try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
         guard shouldReconnect else { return }
         await connectInternal()
@@ -109,7 +124,8 @@ final class ElevenLabsClient: NSObject {
         webSocketTask?.receive { [weak self] result in
             guard let self else { return }
             switch result {
-            case .failure:
+            case .failure(let error):
+                Log.error("WebSocket zerwany: \(error)")
                 self.state = .disconnected
                 Task { await self.scheduleReconnect() }
             case .success(let message):
@@ -131,7 +147,7 @@ final class ElevenLabsClient: NSObject {
 
         switch type {
         case "conversation_initiation_metadata":
-            break // conversation_id etc. -- nothing consumes this yet (Transcript.swift will).
+            Log.info("agent potwierdził start rozmowy")
 
         case "audio":
             guard let audioEvent = json["audio_event"] as? [String: Any],

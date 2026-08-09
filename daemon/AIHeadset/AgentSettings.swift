@@ -97,9 +97,15 @@ enum AgentSettings {
         guard let http = response as? HTTPURLResponse else { throw SettingsError.invalidResponse }
         guard http.statusCode == 200 else { throw SettingsError.httpError(http.statusCode) }
 
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let signedURLString = json["signed_url"] as? String,
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw SettingsError.invalidResponse
+        }
+        // Nazwa pola nie jest potwierdzona w dokumentacji, więc gdy jej
+        // brak -- mówimy jakie pola przyszły, zamiast samego
+        // "nieoczekiwana odpowiedź".
+        guard let signedURLString = json["signed_url"] as? String,
               let url = URL(string: signedURLString) else {
+            Log.error("odpowiedź get-signed-url nie zawiera pola signed_url; otrzymane pola: \(json.keys.sorted())")
             throw SettingsError.invalidResponse
         }
         return url

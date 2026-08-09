@@ -24,7 +24,7 @@ DAEMON_BINARY     := $(DAEMON_CONTENTS)/MacOS/$(DAEMON_NAME)
 DAEMON_SRC        := $(wildcard daemon/AIHeadset/*.swift)
 DAEMON_FRAMEWORKS := -framework AppKit -framework ApplicationServices -framework CoreAudio -framework AudioToolbox -framework Foundation
 
-.PHONY: driver daemon run logs dist clean install uninstall
+.PHONY: driver daemon run logs dist clean install install-app uninstall
 
 driver: $(BINARY)
 
@@ -102,10 +102,28 @@ clean:
 # plan shows) is blocked by SIP on at least some macOS builds (error
 # 150). Killing the process directly works instead -- coreaudiod is a
 # launchd-supervised daemon and gets relaunched automatically.
+# UWAGA: `make driver` produkuje sterownik BEZ podpisu Developer ID, a
+# coreaudiod takiego nie załaduje (AMFI). Dlatego instalacja sprawdza
+# bilet notaryzacji i odmawia, zamiast pozwolić na "zainstalowane, ale
+# urządzenie się nie pojawia" -- objaw, który nie wskazuje przyczyny.
 install: driver
+	@xcrun stapler validate "$(BUNDLE)" >/dev/null 2>&1 || { 		echo ""; 		echo "BŁĄD: $(BUNDLE) nie jest notaryzowany."; 		echo "coreaudiod go nie załaduje i urządzenie się nie pojawi."; 		echo ""; 		echo "  ./packaging/sign.sh $(BUNDLE)"; 		echo "  ./packaging/notarize.sh $(BUNDLE)"; 		echo "  make install"; 		echo ""; 		exit 1; }
 	sudo rm -rf "/Library/Audio/Plug-Ins/HAL/$(DRIVER_NAME).driver"
 	sudo cp -R "$(BUNDLE)" /Library/Audio/Plug-Ins/HAL/
 	sudo killall coreaudiod
+	@echo "Sterownik zainstalowany. Aplikacja: make install-app"
+
+# Instaluje świeżo zbudowaną aplikację do /Applications. Uruchamianie
+# z build/ powoduje App Translocation i uprawnienia nie mają się gdzie
+# zapisać.
+install-app: daemon
+	pkill -f "$(DAEMON_BUNDLE)/Contents/MacOS/$(DAEMON_NAME)" 2>/dev/null || true
+	pkill -f "/Applications/$(DAEMON_NAME).app" 2>/dev/null || true
+	./packaging/sign.sh $(DAEMON_BUNDLE) --local
+	rm -rf "/Applications/$(DAEMON_NAME).app"
+	ditto "$(DAEMON_BUNDLE)" "/Applications/$(DAEMON_NAME).app"
+	xattr -cr "/Applications/$(DAEMON_NAME).app"
+	open "/Applications/$(DAEMON_NAME).app"
 
 uninstall:
 	sudo rm -rf "/Library/Audio/Plug-Ins/HAL/$(DRIVER_NAME).driver"

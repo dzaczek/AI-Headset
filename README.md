@@ -12,7 +12,7 @@ ElevenLabs conversational agent on the line in place of your microphone.
 [![Universal](https://img.shields.io/badge/binary-arm64%20%2B%20x86__64-blue)](#)
 [![Swift + C11](https://img.shields.io/badge/code-Swift%20%2B%20C11-orange?logo=swift&logoColor=white)](#)
 [![Notarized](https://img.shields.io/badge/Apple-notarized-success)](#)
-[![Version](https://img.shields.io/badge/version-0.5.0-informational)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.5.3-informational)](VERSION)
 
 **English** · [Polski](README.pl.md)
 
@@ -77,7 +77,7 @@ turns purple while the agent is actually speaking on your channel.
 ### From a release package
 
 ```bash
-unzip AIHeadset-0.5.0-*.zip
+unzip AIHeadset-0.5.3-*.zip
 cd dist && ./install.sh
 ```
 
@@ -113,7 +113,7 @@ make run                                   # the app, ~2 s
 
 ## Setup
 
-Menu bar icon → **Agent…** (`⌘⇧A`) and **Settings…** (`⌘,`)
+Menu bar icon → **💬 Hints and persona…** (`⌘⇧H`) and **Settings…** (`⌘,`)
 
 | Where | What to select |
 |---|---|
@@ -211,6 +211,6 @@ Releasing: bump `VERSION`, run `packaging/make_dist.sh`.
 
 <div align="center">
 
-Technical design doc (Polish): [`ai-headset-macos-plan.md`](ai-headset-macos-plan.md)
+Built from a detailed technical design document (not published).
 
 </div>

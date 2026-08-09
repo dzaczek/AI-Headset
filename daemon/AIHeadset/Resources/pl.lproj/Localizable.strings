@@ -8,7 +8,7 @@
 "device.input" = "Wejście mikrofonu";
 
 /* Agent */
-"agent.picker" = "Agent";
+"agent.picker" = "Wybór agenta";
 "agent.connect" = "Połącz agenta";
 "agent.disconnect" = "Rozłącz agenta";
 "agent.loading" = "Wczytywanie…";
@@ -93,4 +93,4 @@
 "hint.sent" = "Podpowiedź wysłana.";
 "hint.ready" = "Agent połączony — podpowiedzi idą na żywo.";
 "hint.notConnected" = "Agent nie jest połączony — najpierw go połącz (menu → Połącz agenta).";
-"menu.agentPanel" = "Agent…";
+"menu.agentPanel" = "💬 Podpowiedzi i charakter…";

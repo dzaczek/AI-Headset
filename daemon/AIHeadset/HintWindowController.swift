@@ -23,12 +23,17 @@ final class HintWindowController: NSWindowController, NSTextFieldDelegate {
 
     init(sessionProvider: @escaping () -> AgentSession?) {
         self.sessionProvider = sessionProvider
+        // BEZ .nonactivatingPanel: ten styl celowo nie przejmuje
+        // fokusu klawiatury, a w tym oknie trzeba PISAĆ podpowiedzi.
+        // .utilityWindow + poziom .floating wystarczają, żeby okno
+        // zostawało nad Teamsem.
         let window = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 460, height: 430),
-                             styleMask: [.titled, .closable, .utilityWindow, .nonactivatingPanel],
+                             styleMask: [.titled, .closable, .utilityWindow],
                              backing: .buffered,
                              defer: false)
         window.title = L("hint.title")
         window.isFloatingPanel = true
+        window.becomesKeyOnlyIfNeeded = false
         window.level = .floating // ma być widoczne nad Teamsem w trakcie rozmowy
         window.hidesOnDeactivate = false
         window.center()
