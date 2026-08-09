@@ -94,3 +94,14 @@
 "hint.ready" = "Agent połączony — podpowiedzi idą na żywo.";
 "hint.notConnected" = "Agent nie jest połączony — najpierw go połącz (menu → Połącz agenta).";
 "menu.agentPanel" = "💬 Podpowiedzi i charakter…";
+
+/* Dead man's switch — widzisz to Ty, jako powiadomienie systemowe */
+"dms.body" = "Agent przełączony na MUTE (%@).";
+"dms.reason.disconnected" = "zerwane połączenie WebSocket";
+"dms.reason.noAudio" = "brak dźwięku przez %.1f s od końca Twojej wypowiedzi";
+"dms.reason.latency" = "opóźnienie odpowiedzi %.1f s ponad próg";
+"dms.reason.queueEmpty" = "kolejka odtwarzania opróżniła się w połowie zdania";
+
+/* Wypowiadane NA ZEWNĄTRZ, do rozmówcy — nie do Ciebie (ConsentAnnouncer) */
+"consent.announcement" = "Ta rozmowa może być nagrywana i przetwarzana przez asystenta AI.";
+"filter.deflection" = "Przekażę to zespołowi — potwierdzenie przyjdzie osobno.";

@@ -22,10 +22,25 @@ final class ConsentAnnouncer {
         self.router = router
     }
 
-    func announce(text: String = "Ta rozmowa może być nagrywana i przetwarzana przez asystenta AI.",
+    /// NOTE: this text and this voice go OUT to the other party, so the
+    /// "right" language is the language of the *call*, which nothing
+    /// here knows. Following the app's language is a proxy: it assumes
+    /// you talk to people in the language your Mac is set to. That is
+    /// usually true and always predictable, but on a Polish Mac in an
+    /// English call the other side hears a Polish notice -- pass `text`
+    /// explicitly if that matters. Wiring a real per-call language
+    /// would need the agent's own language setting, which lives on
+    /// ElevenLabs, not here.
+    private static var voiceLanguage: String {
+        let appLanguage = Bundle.main.preferredLocalizations.first ?? "en"
+        return appLanguage.hasPrefix("pl") ? "pl-PL" : "en-US"
+    }
+
+    func announce(text: String = L("consent.announcement"),
                   completion: @escaping () -> Void) {
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "pl-PL") ?? AVSpeechSynthesisVoice(language: "en-US")
+        utterance.voice = AVSpeechSynthesisVoice(language: Self.voiceLanguage)
+            ?? AVSpeechSynthesisVoice(language: "en-US")
 
         var resampler: Resampler?
         var finished = false

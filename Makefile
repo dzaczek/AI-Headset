@@ -51,15 +51,17 @@ $(BINARY): $(SRC) $(HDR) driver/Resources/Info.plist VERSION
 # discover this than a build flag.
 daemon: $(DAEMON_BINARY)
 
+DAEMON_ICON      := daemon/AIHeadset/Resources/AppIcon.icns
 DAEMON_RESOURCES := $(wildcard daemon/AIHeadset/Resources/*.lproj/*.strings)
 
-$(DAEMON_BINARY): $(DAEMON_SRC) $(DAEMON_RESOURCES) daemon/AIHeadset/Info.plist VERSION
+$(DAEMON_BINARY): $(DAEMON_SRC) $(DAEMON_RESOURCES) $(DAEMON_ICON) daemon/AIHeadset/Info.plist VERSION
 	mkdir -p $(DAEMON_CONTENTS)/MacOS
 	mkdir -p $(DAEMON_CONTENTS)/Resources
 	cp daemon/AIHeadset/Info.plist $(DAEMON_CONTENTS)/Info.plist
 	/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" $(DAEMON_CONTENTS)/Info.plist
 	/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(BUILD_STAMP)" $(DAEMON_CONTENTS)/Info.plist
 	cp -R daemon/AIHeadset/Resources/*.lproj $(DAEMON_CONTENTS)/Resources/
+	cp $(DAEMON_ICON) $(DAEMON_CONTENTS)/Resources/
 	swiftc -O -target arm64-apple-macos13.0 -o $(BUILD_DIR)/AIHeadset-arm64 $(DAEMON_SRC) $(DAEMON_FRAMEWORKS)
 	swiftc -O -target x86_64-apple-macos13.0 -o $(BUILD_DIR)/AIHeadset-x86_64 $(DAEMON_SRC) $(DAEMON_FRAMEWORKS)
 	lipo -create -output $(DAEMON_BINARY) $(BUILD_DIR)/AIHeadset-arm64 $(BUILD_DIR)/AIHeadset-x86_64

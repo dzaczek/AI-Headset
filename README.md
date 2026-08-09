@@ -168,7 +168,7 @@ Below is what is **missing** — deliberately and openly:
 |---|---|
 | `Transcript` | written, not wired up — conversations are not saved |
 | `ConsentAnnouncer` | written, not wired up — the recording notice does not play by itself |
-| `CommitmentFilter` | patterns are **Polish only**; in other languages only the prompt layer remains |
+| `CommitmentFilter` | Polish **and** English patterns, both always active; other languages fall back to the prompt layer |
 | ElevenLabs protocol fields | `user_transcript`, `agent_response`, `vad_score`, `ping` — **unverified** against the docs (marked in code) |
 | `.pkg` installer | needs a *Developer ID Installer* certificate; `make_dist.sh` (zip) works today |
 | Hour-long call test | **not done** — the plan calls it the quality gate |

@@ -166,7 +166,7 @@ Poniżej to, czego **nie ma** — świadomie i jawnie:
 |---|---|
 | `Transcript` | napisany, nieuruchamiany — rozmowy nie są zapisywane |
 | `ConsentAnnouncer` | napisany, nieuruchamiany — komunikat o nagrywaniu nie odtwarza się sam |
-| `CommitmentFilter` | wzorce **tylko po polsku**; w innym języku zostaje sama warstwa promptu |
+| `CommitmentFilter` | wzorce polskie **i** angielskie, zawsze obie naraz; w innym języku zostaje sama warstwa promptu |
 | Pola protokołu ElevenLabs | `user_transcript`, `agent_response`, `vad_score`, `ping` — **niezweryfikowane** wobec dokumentacji (oznaczone w kodzie) |
 | Instalator `.pkg` | wymaga certyfikatu *Developer ID Installer*; działa `make_dist.sh` (zip) |
 | Test godzinnej rozmowy | **nieprzeprowadzony** — plan nazywa go bramką jakościową |

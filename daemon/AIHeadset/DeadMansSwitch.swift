@@ -60,20 +60,52 @@ final class DeadMansSwitch {
         hasTriggered = false
     }
 
+    /// Why the switch tripped, carried as a value rather than a string
+    /// because it needs to be said twice in two languages: once in the
+    /// log and once to the user. The log text is deliberately NOT
+    /// localized -- a log that changes wording with the system language
+    /// cannot be grepped, compared against older entries, or pasted
+    /// into a bug report by a user whose Mac speaks a language the
+    /// reader doesn't.
+    private enum TriggerReason {
+        case disconnected
+        case noAudio(TimeInterval)
+        case latency(TimeInterval)
+        case queueEmpty
+
+        var logText: String {
+            switch self {
+            case .disconnected: return "WebSocket disconnected"
+            case .noAudio(let s): return String(format: "no audio event for %.1fs after user's utterance ended", s)
+            case .latency(let s): return String(format: "turn latency %.1fs exceeds threshold", s)
+            case .queueEmpty: return "playback queue emptied mid-utterance"
+            }
+        }
+
+        var localizedText: String {
+            switch self {
+            case .disconnected: return L("dms.reason.disconnected")
+            case .noAudio(let s): return L("dms.reason.noAudio", s)
+            case .latency(let s): return L("dms.reason.latency", s)
+            case .queueEmpty: return L("dms.reason.queueEmpty")
+            }
+        }
+    }
+
     private func check() {
         guard router.mode == .agent, !hasTriggered else { return }
 
-        var reason: String?
+        var reason: TriggerReason?
         if !isConnected {
-            reason = "WebSocket disconnected"
+            reason = .disconnected
         } else if expectingAgentSpeech {
             let silence = Date().timeIntervalSince(lastAudioActivity)
             if silence > config.noAudioAfterUtteranceTimeout {
-                reason = String(format: "no audio event for %.1fs after user's utterance ended", silence)
+                reason = .noAudio(silence)
             } else if silence > config.turnLatencyTimeout {
-                reason = String(format: "turn latency %.1fs exceeds threshold", silence)
+                reason = .latency(silence)
             } else if router.agentPlaybackBuffer.framesAvailable == 0 && silence > 0.5 {
-                reason = "playback queue emptied mid-utterance"
+                reason = .queueEmpty
             }
         }
 
@@ -82,9 +114,9 @@ final class DeadMansSwitch {
         }
     }
 
-    private func trigger(reason: String) {
+    private func trigger(reason: TriggerReason) {
         hasTriggered = true
-        Log.error("dead man's switch zadziałał: \(reason)")
+        Log.error("dead man's switch fired: \(reason.logText)")
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.fallbackPlayer.playBundledFallback()
@@ -93,10 +125,10 @@ final class DeadMansSwitch {
         }
     }
 
-    private func notifyUser(reason: String) {
+    private func notifyUser(reason: TriggerReason) {
         let content = UNMutableNotificationContent()
         content.title = "AI Headset"
-        content.body = "Agent przełączony na MUTE (\(reason))."
+        content.body = L("dms.body", reason.localizedText)
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }

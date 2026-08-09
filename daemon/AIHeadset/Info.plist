@@ -14,6 +14,8 @@
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>AIHeadset</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>cat.sysop.aiheadset</string>
 	<key>CFBundleInfoDictionaryVersion</key>
