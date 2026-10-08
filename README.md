@@ -113,14 +113,14 @@ make run                                   # the app, ~2 s
 
 ## Setup
 
-Menu bar icon → **💬 Hints and persona…** (`⌘⇧H`) and **Settings…** (`⌘,`)
+Menu bar icon → **Hints for Agent…** (`⌘⇧H`) and **Settings…** (`⌘,`)
 
 | Where | What to select |
 |---|---|
 | macOS Sound settings | **your headphones** — not AI Headset |
 | Teams / Zoom → mic and speaker | **AI Headset** |
-| Menu → Monitoring output | the headphones you listen on |
-| Menu → Microphone input | your physical microphone |
+| Menu → Headphones | the headphones you listen on |
+| Menu → Microphone | your physical microphone |
 
 > [!WARNING]
 > Do not set `AI Headset` as the system default device. Every sound —

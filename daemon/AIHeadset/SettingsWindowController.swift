@@ -1,117 +1,174 @@
 import AppKit
 
-/// Faza 4 "Ustawienia" window: agent ID + ElevenLabs API key, plus a
-/// system-prompt editor that reads/writes the agent's behavior
-/// directly via ElevenLabs' REST API (AgentConfigClient) -- requested
-/// explicitly so agent behavior can be tweaked from this app instead
-/// of only from the ElevenLabs dashboard. Plain programmatic AppKit
-/// layout -- no Storyboard/XIB, consistent with the rest of this
-/// project's no-Xcode-project build.
-final class SettingsWindowController: NSWindowController {
+/// Okno Ustawień (⌘,) -- poświadczenia i wybór agenta ElevenLabs.
+///
+/// Zgodnie z HIG (settings.md): ustawienia ogólne, zmieniane rzadko;
+/// zmiany obowiązują od razu, bez przycisku „Zapisz”; okno bez
+/// minimalizacji i powiększania. Dopóki jest jeden panel, tytuł to
+/// „Ustawienia AI Headset”; kolejne panele (Transkrypcja, Modele,
+/// Narzędzia, Notatki) dojdą jako pasek narzędzi razem ze swoimi
+/// funkcjami.
+///
+/// Charakter agenta (system prompt) celowo NIE jest tutaj: to ustawienie
+/// zmieniane pod konkretną rozmowę, więc żyje w oknie podpowiedzi
+/// (settings.md › Task-specific options).
+///
+/// Plain programmatic AppKit layout -- no Storyboard/XIB, consistent
+/// with the rest of this project's no-Xcode-project build.
+final class SettingsWindowController: NSWindowController, NSWindowDelegate {
+    private let apiKeyField = NSSecureTextField()
     private let agentPopUp = NSPopUpButton()
     private let agentIDField = NSTextField()
-    private let apiKeyField = NSSecureTextField()
+    private let healthLabel = NSTextField(wrappingLabelWithString: "")
+    private let recheckButton = NSButton()
     private var availableAgents: [AgentConfigClient.AgentSummary] = []
-    private let promptTextView = NSTextView()
-    private let promptStatusLabel = NSTextField(labelWithString: "")
     private var onSave: (() -> Void)?
 
+    private static let fieldWidth: CGFloat = 320
+
     convenience init(onSave: @escaping () -> Void) {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 480),
-                               styleMask: [.titled, .closable, .resizable],
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 260),
+                               styleMask: [.titled, .closable],
                                backing: .buffered,
                                defer: false)
         window.title = L("settings.title")
         window.center()
         self.init(window: window)
+        window.delegate = self
         self.onSave = onSave
         buildUI()
         refreshAgents()
-        loadPromptIfConfigured()
+        runHealthCheck()
     }
 
     private func buildUI() {
         guard let contentView = window?.contentView else { return }
 
-        let apiKeyLabel = NSTextField(labelWithString: L("settings.apiKey"))
-        let hintLabel = NSTextField(wrappingLabelWithString:
-            L("settings.keyHint"))
-        hintLabel.font = .systemFont(ofSize: 11)
-        hintLabel.textColor = .secondaryLabelColor
+        apiKeyField.stringValue = AgentSettings.apiKey ?? ""
+        configureCommitOnEndEditing(apiKeyField, action: #selector(apiKeyCommitted))
 
-        let agentLabel = NSTextField(labelWithString: L("settings.agent"))
         agentPopUp.target = self
         agentPopUp.action = #selector(agentPopUpChanged)
-        agentPopUp.translatesAutoresizingMaskIntoConstraints = false
-        agentPopUp.widthAnchor.constraint(equalToConstant: 400).isActive = true
+        let refreshButton = NSButton(image: NSImage(systemSymbolName: "arrow.clockwise",
+                                                     accessibilityDescription: L("settings.refreshAgents"))!,
+                                     target: self, action: #selector(refreshAgentsClicked))
+        refreshButton.bezelStyle = .rounded
+        refreshButton.toolTip = L("settings.refreshAgents")
+        let agentRow = NSStackView(views: [agentPopUp, refreshButton])
+        agentRow.spacing = 6
+        agentPopUp.widthAnchor.constraint(equalToConstant: Self.fieldWidth - 38).isActive = true
 
-        // Manual entry stays available: public agents can be used
-        // without an API key, and without a key there is no way to
-        // list anything.
-        let manualLabel = NSTextField(labelWithString: L("settings.agentManual"))
-        manualLabel.font = .systemFont(ofSize: 11)
-        manualLabel.textColor = .secondaryLabelColor
-        agentIDField.placeholderString = "agent_..."
+        // Ręczne ID zostaje: agenci publiczni działają bez klucza API,
+        // a bez klucza nie da się niczego wylistować.
         agentIDField.stringValue = AgentSettings.agentID ?? ""
-        apiKeyField.stringValue = AgentSettings.apiKey ?? ""
+        agentIDField.placeholderString = "agent_…"
+        configureCommitOnEndEditing(agentIDField, action: #selector(agentIDCommitted))
 
-        let promptLabel = NSTextField(labelWithString: L("settings.prompt"))
-        let promptHint = NSTextField(wrappingLabelWithString:
-            L("settings.promptHint"))
-        promptHint.font = .systemFont(ofSize: 11)
-        promptHint.textColor = .secondaryLabelColor
+        recheckButton.title = L("health.recheck")
+        recheckButton.target = self
+        recheckButton.action = #selector(runHealthCheck)
+        recheckButton.bezelStyle = .rounded
+        healthLabel.preferredMaxLayoutWidth = Self.fieldWidth
 
-        promptTextView.isRichText = false
-        promptTextView.font = .systemFont(ofSize: 12)
-        promptTextView.isEditable = true
-        promptTextView.textContainerInset = NSSize(width: 4, height: 4)
-        let promptScroll = NSScrollView()
-        promptScroll.hasVerticalScroller = true
-        promptScroll.documentView = promptTextView
-        promptScroll.translatesAutoresizingMaskIntoConstraints = false
-        promptScroll.borderType = .bezelBorder
-        promptScroll.heightAnchor.constraint(equalToConstant: 180).isActive = true
-
-        promptStatusLabel.font = .systemFont(ofSize: 11)
-        promptStatusLabel.textColor = .secondaryLabelColor
-
-        let reloadButton = NSButton(title: L("settings.reload"), target: self, action: #selector(reloadPrompt))
-        let saveButton = NSButton(title: L("settings.save"), target: self, action: #selector(save))
-        saveButton.keyEquivalent = "\r"
-        let cancelButton = NSButton(title: L("settings.close"), target: self, action: #selector(cancel))
-        let buttonRow = NSStackView(views: [reloadButton, NSView(), cancelButton, saveButton])
-        buttonRow.orientation = .horizontal
-        buttonRow.spacing = 8
-
-        for field in [agentIDField, apiKeyField] {
-            field.translatesAutoresizingMaskIntoConstraints = false
-            field.widthAnchor.constraint(equalToConstant: 400).isActive = true
+        let grid = NSGridView(views: [
+            [label("settings.apiKey"), apiKeyField],
+            [NSGridCell.emptyContentView, footnote("settings.keyHint")],
+            [label("settings.agent"), agentRow],
+            [label("settings.agentID"), agentIDField],
+            [NSGridCell.emptyContentView, footnote("settings.agentManual")],
+            [label("settings.health"), healthLabel],
+            [NSGridCell.emptyContentView, recheckButton],
+        ])
+        // Układ formularza macOS: etykiety do prawej, pola do lewej.
+        grid.column(at: 0).xPlacement = .trailing
+        grid.rowAlignment = .firstBaseline
+        grid.columnSpacing = 8
+        grid.rowSpacing = 8
+        for row in [1, 4] { grid.row(at: row).topPadding = -4 }
+        grid.row(at: 2).topPadding = 8
+        grid.row(at: 5).topPadding = 8
+        for field in [apiKeyField, agentIDField] {
+            field.widthAnchor.constraint(equalToConstant: Self.fieldWidth).isActive = true
         }
-        promptScroll.widthAnchor.constraint(equalToConstant: 400).isActive = true
 
-        let stack = NSStackView(views: [
-            apiKeyLabel, apiKeyField, hintLabel,
-            agentLabel, agentPopUp, manualLabel, agentIDField,
-            promptLabel, promptScroll, promptHint, promptStatusLabel,
-            buttonRow,
-        ])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 8
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(stack)
+        grid.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(grid)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -20),
+            grid.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            grid.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -20),
+            grid.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            grid.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
         ])
-        buttonRow.widthAnchor.constraint(equalToConstant: 400).isActive = true
     }
 
-    private func loadPromptIfConfigured() {
-        guard AgentSettings.isConfigured, AgentSettings.apiKey != nil else { return }
-        reloadPrompt()
+    private func label(_ key: String) -> NSTextField {
+        NSTextField(labelWithString: L(key))
+    }
+
+    private func footnote(_ key: String) -> NSTextField {
+        let field = NSTextField(wrappingLabelWithString: L(key))
+        field.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        field.textColor = .secondaryLabelColor
+        field.preferredMaxLayoutWidth = Self.fieldWidth
+        return field
+    }
+
+    /// Zmiana obowiązuje po wyjściu z pola (Tab, klik gdzie indziej,
+    /// Enter) -- bez osobnego przycisku zapisu.
+    private func configureCommitOnEndEditing(_ field: NSTextField, action: Selector) {
+        field.target = self
+        field.action = action
+        field.cell?.sendsActionOnEndEditing = true
+    }
+
+    // MARK: - Commit
+
+    /// AgentConfigClient reads credentials from the Keychain, so
+    /// everything that talks to ElevenLabs must persist first --
+    /// otherwise it would silently use stale (or absent) credentials
+    /// and fail with a confusing 401.
+    private func persistCredentials() {
+        let agentID = agentIDField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let apiKey = apiKeyField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        AgentSettings.agentID = agentID.isEmpty ? nil : agentID
+        AgentSettings.apiKey = apiKey.isEmpty ? nil : apiKey
+        onSave?()
+    }
+
+    @objc private func apiKeyCommitted() {
+        guard apiKeyField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) != (AgentSettings.apiKey ?? "")
+        else { return }
+        persistCredentials()
+        // Inny klucz = inny (albo dopiero dostępny) zestaw agentów.
+        refreshAgents()
+        runHealthCheck()
+    }
+
+    @objc private func agentIDCommitted() {
+        guard agentIDField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) != (AgentSettings.agentID ?? "")
+        else { return }
+        persistCredentials()
+        selectCurrentAgentInPopUp()
+        runHealthCheck()
+    }
+
+    @objc private func agentPopUpChanged() {
+        guard let id = agentPopUp.selectedItem?.representedObject as? String else { return }
+        agentIDField.stringValue = id
+        persistCredentials()
+        runHealthCheck()
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        // Zamknięcie okna w trakcie edycji pola też zapisuje.
+        window?.makeFirstResponder(nil)
+    }
+
+    // MARK: - Agent list
+
+    @objc private func refreshAgentsClicked() {
+        persistCredentials()
+        refreshAgents()
     }
 
     /// Populates the agent dropdown from the ElevenLabs account. Needs
@@ -128,11 +185,7 @@ final class SettingsWindowController: NSWindowController {
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 self.availableAgents = agents
-                if agents.isEmpty {
-                    self.renderAgentPopUp(placeholder: L("agent.none"))
-                } else {
-                    self.renderAgentPopUp(placeholder: nil)
-                }
+                self.renderAgentPopUp(placeholder: agents.isEmpty ? L("agent.none") : nil)
             }
         }
     }
@@ -149,79 +202,41 @@ final class SettingsWindowController: NSWindowController {
             agentPopUp.addItem(withTitle: agent.name)
             agentPopUp.lastItem?.representedObject = agent.id
         }
-        // Reflect whichever agent is currently configured.
-        if let current = AgentSettings.agentID,
-           let index = availableAgents.firstIndex(where: { $0.id == current }) {
-            agentPopUp.selectItem(at: index)
+        selectCurrentAgentInPopUp()
+    }
+
+    private func selectCurrentAgentInPopUp() {
+        guard let current = AgentSettings.agentID,
+              let index = availableAgents.firstIndex(where: { $0.id == current }) else { return }
+        agentPopUp.selectItem(at: index)
+    }
+
+    // MARK: - Config health
+
+    @objc private func runHealthCheck() {
+        recheckButton.isEnabled = AgentSettings.isConfigured
+        guard AgentSettings.isConfigured else {
+            healthLabel.stringValue = L("settings.healthNotConfigured")
+            healthLabel.textColor = .secondaryLabelColor
+            return
         }
-    }
-
-    @objc private func agentPopUpChanged() {
-        guard let id = agentPopUp.selectedItem?.representedObject as? String else { return }
-        agentIDField.stringValue = id
-        persistCredentials()
-        onSave?()
-        reloadPrompt() // show the newly selected agent's prompt
-    }
-
-    /// Commits whatever is currently typed in the credential fields to
-    /// AgentSettings. Both Save *and* Reload go through this first:
-    /// AgentConfigClient reads credentials from the Keychain, so
-    /// fetching without persisting first would silently use stale (or
-    /// absent) credentials and fail with a confusing 401.
-    private func persistCredentials() {
-        let agentID = agentIDField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        let apiKey = apiKeyField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        AgentSettings.agentID = agentID.isEmpty ? nil : agentID
-        AgentSettings.apiKey = apiKey.isEmpty ? nil : apiKey
-    }
-
-    @objc private func reloadPrompt() {
-        persistCredentials()
-        onSave?()
-        promptStatusLabel.stringValue = L("settings.loading")
+        healthLabel.stringValue = L("settings.healthChecking")
+        healthLabel.textColor = .secondaryLabelColor
         Task { [weak self] in
-            guard let self else { return }
-            do {
-                let text = try await AgentConfigClient.fetchSystemPrompt()
-                await MainActor.run {
-                    self.promptTextView.string = text
-                    self.promptStatusLabel.stringValue = L("settings.loaded")
-                }
-            } catch {
-                await MainActor.run {
-                    self.promptStatusLabel.stringValue = L("settings.loadError", String(describing: error))
+            let findings = await ConfigHealthCheck.run()
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                let warnings = findings.filter { $0.severity == .warning }
+                // Znaczenie niesie symbol i tekst, nie kolor --
+                // pomarańczowy tekst na jasnym tle nie trzyma 4,5:1.
+                if warnings.isEmpty {
+                    self.healthLabel.stringValue = L("settings.healthOK")
+                    self.healthLabel.textColor = .secondaryLabelColor
+                } else {
+                    self.healthLabel.stringValue = warnings.map { "⚠︎ \($0.message)" }.joined(separator: "\n")
+                    self.healthLabel.textColor = .labelColor
                 }
             }
         }
-    }
-
-    @objc private func save() {
-        persistCredentials()
-        onSave?()
-        // A newly entered/changed API key means a different (or newly
-        // reachable) set of agents.
-        refreshAgents()
-
-        let promptText = promptTextView.string
-        guard !promptText.isEmpty else { return }
-        promptStatusLabel.stringValue = L("settings.saving")
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                try await AgentConfigClient.updateSystemPrompt(promptText)
-                await MainActor.run {
-                    self.promptStatusLabel.stringValue = L("settings.saved")
-                }
-            } catch {
-                await MainActor.run {
-                    self.promptStatusLabel.stringValue = L("settings.saveError", String(describing: error))
-                }
-            }
-        }
-    }
-
-    @objc private func cancel() {
-        window?.close()
     }
 }

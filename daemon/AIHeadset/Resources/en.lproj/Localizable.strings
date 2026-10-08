@@ -1,14 +1,14 @@
 /* Modes */
-"mode.pass" = "PASS — relay my voice";
-"mode.agent" = "AGENT — agent speaks for me";
-"mode.mute" = "MUTE — silence";
+"mode.pass" = "My Voice";
+"mode.agent" = "Agent Speaks for Me";
+"mode.mute" = "Mute";
 
 /* Devices */
-"device.output" = "Monitoring output";
-"device.input" = "Microphone input";
+"device.output" = "Headphones: %@";
+"device.input" = "Microphone: %@";
 
 /* Agent */
-"agent.picker" = "Choose agent";
+"agent.picker" = "Agent: %@";
 "agent.connect" = "Connect agent";
 "agent.disconnect" = "Disconnect agent";
 "agent.loading" = "Loading…";
@@ -35,7 +35,7 @@
 /* Menu */
 "menu.testTone" = "Test sound in headphones";
 "menu.settings" = "Settings…";
-"menu.quit" = "Quit";
+"menu.quit" = "Quit AI Headset";
 
 /* Alerts */
 "alert.configure.title" = "Configure the agent";
@@ -46,20 +46,14 @@
 /* Settings window */
 "settings.title" = "AI Headset Settings";
 "settings.agent" = "Agent:";
-"settings.agentManual" = "or enter an agent ID manually (public agents, no API key):";
+"settings.agentManual" = "Public agents work with just the ID, no API key needed.";
 "settings.agentID" = "Agent ID:";
 "settings.apiKey" = "ElevenLabs API Key:";
-"settings.keyHint" = "The API key is only required for private agents. Stored locally in this Mac's Keychain, never in project files.";
-"settings.prompt" = "Agent system prompt (who it is, how it behaves):";
-"settings.promptHint" = "Loaded from and saved directly to your ElevenLabs account via their REST API — that is the single source of truth; this app stores nothing locally beyond this edit field.";
-"settings.reload" = "Load from ElevenLabs";
-"settings.save" = "Save";
-"settings.close" = "Close";
+"settings.keyHint" = "Needed for private agents. Stored only in this Mac’s Keychain.";
 "settings.loading" = "Loading…";
 "settings.loaded" = "Loaded from ElevenLabs.";
 "settings.loadError" = "Load error: %@";
 "settings.saving" = "Saving prompt…";
-"settings.saved" = "Prompt saved to ElevenLabs.";
 "settings.saveError" = "Save error: %@";
 
 /* Errors */
@@ -92,8 +86,8 @@
 "hint.send" = "Send hint";
 "hint.sent" = "Hint sent.";
 "hint.ready" = "Agent connected — hints go through live.";
-"hint.notConnected" = "Agent not connected — connect it first (menu → Connect agent).";
-"menu.agentPanel" = "💬 Hints and persona…";
+"hint.notConnected" = "Agent not connected — connect it first (menu → Agent → Connect agent).";
+"menu.agentPanel" = "Hints for Agent…";
 
 /* Dead man's switch — shown to you, as a system notification */
 "dms.body" = "Agent switched to MUTE (%@).";
@@ -105,3 +99,15 @@
 /* Spoken OUT to the other party, not to you — see ConsentAnnouncer */
 "consent.announcement" = "This conversation may be recorded and processed by an AI assistant.";
 "filter.deflection" = "I'll pass that on to the team — confirmation will follow separately.";
+
+/* Menu + Settings layout */
+"menu.header" = "AI Headset — %@";
+"menu.diagnostics" = "Diagnostics";
+"menu.version" = "Version %@ (%@)";
+"device.none" = "none";
+"agent.noneSelected" = "none selected";
+"settings.refreshAgents" = "Refresh Agent List";
+"settings.health" = "Configuration:";
+"settings.healthOK" = "✓ Agent configuration looks good.";
+"settings.healthChecking" = "Checking…";
+"settings.healthNotConfigured" = "Choose an agent to check its configuration.";

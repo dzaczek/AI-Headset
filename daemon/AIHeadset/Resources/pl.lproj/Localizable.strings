@@ -1,19 +1,19 @@
 /* Modes */
-"mode.pass" = "PASS — przekazuj mój głos";
-"mode.agent" = "AGENT — agent rozmawia za mnie";
-"mode.mute" = "MUTE — cisza";
+"mode.pass" = "Mój głos";
+"mode.agent" = "Agent mówi za mnie";
+"mode.mute" = "Wycisz";
 
 /* Devices */
-"device.output" = "Wyjście monitorujące";
-"device.input" = "Wejście mikrofonu";
+"device.output" = "Słuchawki: %@";
+"device.input" = "Mikrofon: %@";
 
 /* Agent */
-"agent.picker" = "Wybór agenta";
+"agent.picker" = "Agent: %@";
 "agent.connect" = "Połącz agenta";
 "agent.disconnect" = "Rozłącz agenta";
 "agent.loading" = "Wczytywanie…";
 "agent.retry" = "Spróbuj ponownie";
-"agent.none" = "Brak agentów — sprawdź API Key";
+"agent.none" = "Brak agentów — sprawdź klucz API";
 "agent.state.disconnected" = "rozłączony";
 "agent.state.connecting" = "łączenie…";
 "agent.state.connected" = "połączony";
@@ -35,7 +35,7 @@
 /* Menu */
 "menu.testTone" = "Test dźwięku w słuchawkach";
 "menu.settings" = "Ustawienia…";
-"menu.quit" = "Zakończ";
+"menu.quit" = "Zakończ AI Headset";
 
 /* Alerts */
 "alert.configure.title" = "Skonfiguruj agenta";
@@ -46,20 +46,14 @@
 /* Settings window */
 "settings.title" = "Ustawienia AI Headset";
 "settings.agent" = "Agent:";
-"settings.agentManual" = "albo wpisz ID agenta ręcznie (agenci publiczni, bez API Key):";
-"settings.agentID" = "Agent ID:";
-"settings.apiKey" = "ElevenLabs API Key:";
-"settings.keyHint" = "API Key jest wymagany tylko dla agentów prywatnych. Zapisywany lokalnie w Keychainie tego Maca, nigdy w plikach projektu.";
-"settings.prompt" = "System prompt agenta (kim jest, jak się zachowuje):";
-"settings.promptHint" = "Wczytywany i zapisywany bezpośrednio na koncie ElevenLabs przez ich REST API — to jedyne źródło prawdy, appka niczego nie trzyma lokalnie poza tym polem edycji.";
-"settings.reload" = "Wczytaj z ElevenLabs";
-"settings.save" = "Zapisz";
-"settings.close" = "Zamknij";
+"settings.agentManual" = "Agenci publiczni działają z samym ID, bez klucza API.";
+"settings.agentID" = "ID agenta:";
+"settings.apiKey" = "Klucz API ElevenLabs:";
+"settings.keyHint" = "Potrzebny dla agentów prywatnych. Zapisywany tylko w pęku kluczy tego Maca.";
 "settings.loading" = "Wczytywanie…";
 "settings.loaded" = "Wczytano z ElevenLabs.";
 "settings.loadError" = "Błąd wczytywania: %@";
 "settings.saving" = "Zapisywanie prompta…";
-"settings.saved" = "Prompt zapisany na ElevenLabs.";
 "settings.saveError" = "Błąd zapisu prompta: %@";
 
 /* Errors */
@@ -92,8 +86,8 @@
 "hint.send" = "Wyślij podpowiedź";
 "hint.sent" = "Podpowiedź wysłana.";
 "hint.ready" = "Agent połączony — podpowiedzi idą na żywo.";
-"hint.notConnected" = "Agent nie jest połączony — najpierw go połącz (menu → Połącz agenta).";
-"menu.agentPanel" = "💬 Podpowiedzi i charakter…";
+"hint.notConnected" = "Agent nie jest połączony — najpierw go połącz (menu → Agent → Połącz agenta).";
+"menu.agentPanel" = "Podpowiedzi dla agenta…";
 
 /* Dead man's switch — widzisz to Ty, jako powiadomienie systemowe */
 "dms.body" = "Agent przełączony na MUTE (%@).";
@@ -105,3 +99,15 @@
 /* Wypowiadane NA ZEWNĄTRZ, do rozmówcy — nie do Ciebie (ConsentAnnouncer) */
 "consent.announcement" = "Ta rozmowa może być nagrywana i przetwarzana przez asystenta AI.";
 "filter.deflection" = "Przekażę to zespołowi — potwierdzenie przyjdzie osobno.";
+
+/* Menu + Settings layout */
+"menu.header" = "AI Headset — %@";
+"menu.diagnostics" = "Diagnostyka";
+"menu.version" = "Wersja %@ (%@)";
+"device.none" = "brak";
+"agent.noneSelected" = "nie wybrano";
+"settings.refreshAgents" = "Odśwież listę agentów";
+"settings.health" = "Konfiguracja:";
+"settings.healthOK" = "✓ Konfiguracja agenta jest poprawna.";
+"settings.healthChecking" = "Sprawdzanie…";
+"settings.healthNotConfigured" = "Wybierz agenta, żeby sprawdzić jego konfigurację.";

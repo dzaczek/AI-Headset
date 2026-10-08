@@ -112,14 +112,14 @@ make run                                   # aplikacja, ~2 s
 
 ## Konfiguracja
 
-Ikona w pasku menu → **💬 Podpowiedzi i charakter…** (`⌘⇧H`) i **Ustawienia…** (`⌘,`)
+Ikona w pasku menu → **Podpowiedzi dla agenta…** (`⌘⇧H`) i **Ustawienia…** (`⌘,`)
 
 | Gdzie | Co ustawiasz |
 |---|---|
 | Ustawienia Dźwięku macOS | **Twoje słuchawki** — nie AI Headset |
 | Teams / Zoom → mikrofon i głośnik | **AI Headset** |
-| Menu → Wyjście monitorujące | słuchawki, na których słyszysz rozmowę |
-| Menu → Wejście mikrofonu | Twój fizyczny mikrofon |
+| Menu → Słuchawki | słuchawki, na których słyszysz rozmowę |
+| Menu → Mikrofon | Twój fizyczny mikrofon |
 
 > [!WARNING]
 > Nie ustawiaj `AI Headset` jako domyślnego urządzenia systemu. Wszystkie

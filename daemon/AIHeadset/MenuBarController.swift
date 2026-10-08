@@ -151,26 +151,30 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
     // MARK: - Menu construction
 
+    /// Układ wg HIG (menus.md › Organization): na górze to, czego
+    /// dotyka się w trakcie rozmowy (tryb, okno podpowiedzi), potem
+    /// wybory z bieżącą wartością w tytule, a diagnostyka -- mierniki,
+    /// statusy, test dźwięku, wersja -- w jednym podmenu, żeby nie
+    /// wydłużała menu. Na wierzch wychodzi tylko to, co wymaga reakcji.
     private func rebuildMenu() {
         menu.removeAllItems()
 
-        let modeItems: [(String, RouterMode)] = [
-            (L("mode.pass"), .pass),
-            (L("mode.agent"), .agent),
-            (L("mode.mute"), .mute),
-        ]
-        for (title, mode) in modeItems {
-            let item = NSMenuItem(title: title, action: #selector(selectMode(_:)), keyEquivalent: "")
+        let currentMode = router?.mode ?? .pass
+        let header = NSMenuItem(title: L("menu.header", modeTitle(currentMode)), action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        menu.addItem(header)
+
+        for mode in [RouterMode.pass, .agent, .mute] {
+            let item = NSMenuItem(title: modeTitle(mode), action: #selector(selectMode(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = mode
-            item.state = (router?.mode ?? .pass) == mode ? .on : .off
+            item.state = currentMode == mode ? .on : .off
             menu.addItem(item)
         }
 
-        // Zaraz pod trybami: to jest okno używane W TRAKCIE rozmowy,
-        // więc nie może być schowane przy ustawieniach. Skrót NIE ⌘⇧A --
-        // tamten jest globalnym przełącznikiem PASS↔AGENT i przechwytuje
-        // zdarzenie, zanim dojdzie do menu.
+        // Okno używane W TRAKCIE rozmowy, więc tuż pod trybami. Skrót
+        // NIE ⌘⇧A -- tamten jest globalnym przełącznikiem PASS↔AGENT i
+        // przechwytuje zdarzenie, zanim dojdzie do menu.
         menu.addItem(.separator())
         let panelItem = NSMenuItem(title: L("menu.agentPanel"), action: #selector(openAgentPanel), keyEquivalent: "h")
         panelItem.keyEquivalentModifierMask = [.command, .shift]
@@ -178,80 +182,117 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(panelItem)
 
         menu.addItem(.separator())
-        menu.addItem(buildDevicePickerItem(title: L("device.output"), scope: kAudioObjectPropertyScopeOutput,
+        menu.addItem(buildAgentPickerItem())
+        menu.addItem(buildDevicePickerItem(titleKey: "device.output", scope: kAudioObjectPropertyScopeOutput,
                                             current: outputDeviceUID, action: #selector(selectOutputDevice(_:))))
-        menu.addItem(buildDevicePickerItem(title: L("device.input"), scope: kAudioObjectPropertyScopeInput,
+        menu.addItem(buildDevicePickerItem(titleKey: "device.input", scope: kAudioObjectPropertyScopeInput,
                                             current: inputDeviceUID, action: #selector(selectInputDevice(_:))))
+
+        // Problemy wymagające reakcji -- widoczne bez otwierania podmenu.
+        let attention = attentionItems()
+        if !attention.isEmpty {
+            menu.addItem(.separator())
+            attention.forEach(menu.addItem)
+        }
+
+        menu.addItem(.separator())
+        menu.addItem(buildDiagnosticsItem())
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: L("menu.settings"), action: #selector(openSettingsMenuAction), keyEquivalent: ","))
-        let toneItem = NSMenuItem(title: L("menu.testTone"), action: #selector(playTestTone), keyEquivalent: "")
-        toneItem.target = self
-        menu.addItem(toneItem)
-
-        menu.addItem(.separator())
-        menu.addItem(statusLine(title: L("status.audio", status.label), color: status.glyphColor))
-        menu.addItem(statusLine(title: L("status.agent", agentStateLabel), color: agentStateColor))
-
-        uplinkMeterItem = statusLine(title: meterTitle(L("meter.toAgent"), router?.uplinkLevel ?? 0), color: .systemBlue)
-        downlinkMeterItem = statusLine(title: meterTitle(L("meter.fromAgent"), router?.downlinkLevel ?? 0), color: .systemPurple)
-        headphonesMeterItem = statusLine(title: meterTitle(L("meter.toHeadphones"), router?.physicalOutLevel ?? 0), color: .systemTeal)
-        micMeterItem = statusLine(title: meterTitle(L("meter.mic"), router?.micLevel ?? 0), color: .systemGreen)
-        menu.addItem(uplinkMeterItem!)
-        menu.addItem(downlinkMeterItem!)
-        menu.addItem(headphonesMeterItem!)
-        menu.addItem(micMeterItem!)
-        if micPermission == .denied {
-            let warning = statusLine(title: L("mic.denied"), color: .systemRed)
-            warning.action = #selector(openMicrophoneSettings)
-            warning.target = self
-            warning.isEnabled = true
-            menu.addItem(warning)
-        }
-
-        if let latency = lastTurnLatency {
-            // Plan's Faza 3 acceptance target is under 1s.
-            let color: NSColor = latency < 1.0 ? .systemGreen : (latency < 2.5 ? .systemYellow : .systemRed)
-            menu.addItem(statusLine(title: L("status.latency", latency), color: color))
-        }
-
-        menu.addItem(buildAgentPickerItem())
-
-        let toggleTitle = agentSession == nil ? L("agent.connect") : L("agent.disconnect")
-        let toggleItem = NSMenuItem(title: toggleTitle, action: #selector(toggleAgentConnection), keyEquivalent: "")
-        toggleItem.target = self
-        menu.addItem(toggleItem)
-
-        if !healthFindings.isEmpty {
-            menu.addItem(.separator())
-            let parent = NSMenuItem(title: healthSummaryTitle, action: nil, keyEquivalent: "")
-            let submenu = NSMenu()
-            for finding in healthFindings {
-                submenu.addItem(statusLine(title: finding.message,
-                                            color: finding.severity == .ok ? .systemGreen : .systemOrange))
-            }
-            let recheck = NSMenuItem(title: L("health.recheck"), action: #selector(recheckConfig), keyEquivalent: "")
-            recheck.target = self
-            submenu.addItem(.separator())
-            submenu.addItem(recheck)
-            parent.submenu = submenu
-            menu.addItem(parent)
-        }
-
-        menu.addItem(.separator())
-        // Version + build stamp, so "which build is actually running"
-        // is never a guess from file timestamps.
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
-        let versionItem = NSMenuItem(title: "v\(version) (\(build))", action: nil, keyEquivalent: "")
-        versionItem.isEnabled = false
-        menu.addItem(versionItem)
-
         menu.addItem(NSMenuItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q"))
 
         for item in menu.items where item.action != nil {
             item.target = item.target ?? self
         }
+    }
+
+    private func modeTitle(_ mode: RouterMode) -> String {
+        switch mode {
+        case .pass: return L("mode.pass")
+        case .agent: return L("mode.agent")
+        case .mute: return L("mode.mute")
+        }
+    }
+
+    /// Błąd audio, zablokowany mikrofon i ostrzeżenia konfiguracji
+    /// agenta. Wszystko, co tu trafia, jest tekstem, nie samym kolorem.
+    private func attentionItems() -> [NSMenuItem] {
+        var items: [NSMenuItem] = []
+        if status == .error {
+            items.append(statusLine(title: L("status.audio", status.label), color: status.glyphColor))
+        }
+        if micPermission == .denied {
+            let warning = statusLine(title: L("mic.denied"), color: .systemRed)
+            warning.action = #selector(openMicrophoneSettings)
+            warning.target = self
+            warning.isEnabled = true
+            items.append(warning)
+        }
+        if healthFindings.contains(where: { $0.severity == .warning }) {
+            items.append(buildHealthItem())
+        }
+        return items
+    }
+
+    private func buildHealthItem() -> NSMenuItem {
+        let parent = NSMenuItem(title: healthSummaryTitle, action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for finding in healthFindings {
+            submenu.addItem(statusLine(title: finding.message,
+                                        color: finding.severity == .ok ? .systemGreen : .systemOrange))
+        }
+        let recheck = NSMenuItem(title: L("health.recheck"), action: #selector(recheckConfig), keyEquivalent: "")
+        recheck.target = self
+        submenu.addItem(.separator())
+        submenu.addItem(recheck)
+        parent.submenu = submenu
+        return parent
+    }
+
+    private func buildDiagnosticsItem() -> NSMenuItem {
+        let parent = NSMenuItem(title: L("menu.diagnostics"), action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+
+        submenu.addItem(statusLine(title: L("status.audio", status.label), color: status.glyphColor))
+        submenu.addItem(statusLine(title: L("status.agent", agentStateLabel), color: agentStateColor))
+        if let latency = lastTurnLatency {
+            // Plan's Faza 3 acceptance target is under 1s.
+            let color: NSColor = latency < 1.0 ? .systemGreen : (latency < 2.5 ? .systemYellow : .systemRed)
+            submenu.addItem(statusLine(title: L("status.latency", latency), color: color))
+        }
+
+        submenu.addItem(.separator())
+        uplinkMeterItem = statusLine(title: meterTitle(L("meter.toAgent"), router?.uplinkLevel ?? 0), color: .systemBlue)
+        downlinkMeterItem = statusLine(title: meterTitle(L("meter.fromAgent"), router?.downlinkLevel ?? 0), color: .systemPurple)
+        headphonesMeterItem = statusLine(title: meterTitle(L("meter.toHeadphones"), router?.physicalOutLevel ?? 0), color: .systemTeal)
+        micMeterItem = statusLine(title: meterTitle(L("meter.mic"), router?.micLevel ?? 0), color: .systemGreen)
+        submenu.addItem(uplinkMeterItem!)
+        submenu.addItem(downlinkMeterItem!)
+        submenu.addItem(headphonesMeterItem!)
+        submenu.addItem(micMeterItem!)
+
+        submenu.addItem(.separator())
+        let toneItem = NSMenuItem(title: L("menu.testTone"), action: #selector(playTestTone), keyEquivalent: "")
+        toneItem.target = self
+        submenu.addItem(toneItem)
+        // Gdy konfiguracja jest w porządku, jej podsumowanie nie musi
+        // wisieć w głównym menu -- ale ma być gdzie je sprawdzić.
+        if !healthFindings.isEmpty && !healthFindings.contains(where: { $0.severity == .warning }) {
+            submenu.addItem(buildHealthItem())
+        }
+
+        submenu.addItem(.separator())
+        // Version + build stamp, so "which build is actually running"
+        // is never a guess from file timestamps.
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        let versionItem = NSMenuItem(title: L("menu.version", version, build), action: nil, keyEquivalent: "")
+        versionItem.isEnabled = false
+        submenu.addItem(versionItem)
+
+        parent.submenu = submenu
+        return parent
     }
 
     private var agentStateLabel: String {
@@ -354,7 +395,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     /// the menu is first built with credentials present, and after
     /// Settings changes.
     private func buildAgentPickerItem() -> NSMenuItem {
-        let parent = NSMenuItem(title: L("agent.picker"), action: nil, keyEquivalent: "")
+        // Bieżący wybór w tytule, żeby nie trzeba było otwierać podmenu.
+        let currentID = AgentSettings.agentID
+        let currentName = availableAgents.first(where: { $0.id == currentID })?.name
+            ?? currentID.flatMap { $0.isEmpty ? nil : $0 }
+            ?? L("agent.noneSelected")
+        let parent = NSMenuItem(title: L("agent.picker", currentName), action: nil, keyEquivalent: "")
         let submenu = NSMenu()
 
         if availableAgents.isEmpty {
@@ -385,6 +431,14 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                 submenu.addItem(item)
             }
         }
+
+        // Połączenie dotyczy wybranego agenta, więc mieszka obok wyboru.
+        submenu.addItem(.separator())
+        let toggleTitle = agentSession == nil ? L("agent.connect") : L("agent.disconnect")
+        let toggleItem = NSMenuItem(title: toggleTitle, action: #selector(toggleAgentConnection), keyEquivalent: "")
+        toggleItem.target = self
+        submenu.addItem(toggleItem)
+
         parent.submenu = submenu
         return parent
     }
@@ -447,9 +501,13 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         rebuildMenu()
     }
 
-    private func buildDevicePickerItem(title: String, scope: AudioObjectPropertyScope, current: String?,
+    private func buildDevicePickerItem(titleKey: String, scope: AudioObjectPropertyScope, current: String?,
                                         action: Selector) -> NSMenuItem {
-        let parent = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        let currentName = current
+            .flatMap(AudioDeviceUtil.translateUIDToDevice)
+            .flatMap(AudioDeviceUtil.deviceName(for:))
+            ?? L("device.none")
+        let parent = NSMenuItem(title: L(titleKey, currentName), action: nil, keyEquivalent: "")
         let submenu = NSMenu()
         for deviceID in AudioDeviceUtil.allDeviceIDs() {
             guard let uid = AudioDeviceUtil.deviceUID(for: deviceID),
