@@ -67,6 +67,17 @@ extension Resampler {
         return try Resampler(from: inputFormat, to: outputFormat)
     }
 
+    /// Bufor transkrypcji (Float32 mono, częstotliwość urządzenia) ->
+    /// format silników rozpoznawania (PCM16 mono 16 kHz).
+    static func monoDeviceToSpeech(deviceSampleRate: Double) throws -> Resampler {
+        guard let inputFormat = AVAudioFormat(standardFormatWithSampleRate: deviceSampleRate, channels: 1),
+              let outputFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000,
+                                                channels: 1, interleaved: true) else {
+            throw ResamplerError.converterCreationFailed
+        }
+        return try Resampler(from: inputFormat, to: outputFormat)
+    }
+
     /// Agent TTS format (16kHz PCM16 mono) -> device-native (48kHz
     /// Float32 stereo) for the AGENT-mode playback buffer.
     static func agentToDevice(deviceSampleRate: Double = AIHeadsetConfig.sampleRate) throws -> Resampler {

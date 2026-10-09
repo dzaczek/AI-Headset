@@ -12,6 +12,7 @@ A=daemon/AIHeadset
 TESTS=(
     "transcript_store_test: $A/TranscriptModel.swift $A/TranscriptStore.swift"
     "router_tap_test: $A/AudioRouter.swift $A/RingBuffer.swift $A/Config.swift $A/Log.swift $A/AggregateDevice.swift $A/AudioDeviceUtil.swift"
+    "transcription_session_test: $A/TranscriptionSession.swift $A/SpeechTranscriber.swift $A/TranscriptModel.swift $A/TranscriptStore.swift $A/Transcript.swift $A/Resampler.swift $A/AudioRouter.swift $A/RingBuffer.swift $A/Config.swift $A/Log.swift $A/AggregateDevice.swift $A/AudioDeviceUtil.swift"
 )
 
 OUT=build/tests

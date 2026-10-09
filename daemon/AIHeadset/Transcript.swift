@@ -13,6 +13,8 @@ final class Transcript {
         case user
         case agent
         case system
+        /// Strona rozmówców (Bridge.in); `user` to mikrofon użytkownika.
+        case caller
     }
 
     private struct Entry: Codable {
