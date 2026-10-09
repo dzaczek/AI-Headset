@@ -687,17 +687,20 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
     private func openSettings() {
         if settingsWindowController == nil {
-            settingsWindowController = SettingsWindowController { [weak self] in
+            settingsWindowController = SettingsWindowController(onSave: { [weak self] in
                 // Credentials may have changed -- AGENT mode may now be
                 // available, and the agent list may now be fetchable.
                 self?.refreshAgentList()
                 self?.rebuildMenu()
-            }
+            }, onTranscriptionChange: { [weak self] in
+                self?.restartTranscription()
+            })
         }
-        settingsWindowController?.showWindow(nil)
-        settingsWindowController?.window?.makeKeyAndOrderFront(nil)
+        settingsWindowController?.show()
         NSApp.activate(ignoringOtherApps: true)
     }
+
+    private func restartTranscription() {}
 
     /// Zapamiętywane tylko przy jawnym wyborze z menu -- domyślne
     /// systemu mają się dalej zmieniać razem z systemem.

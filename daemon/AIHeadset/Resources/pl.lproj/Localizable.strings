@@ -44,7 +44,6 @@
 "alert.cancel" = "Anuluj";
 
 /* Settings window */
-"settings.title" = "Ustawienia AI Headset";
 "settings.agent" = "Agent:";
 "settings.agentManual" = "Agenci publiczni działają z samym ID, bez klucza API.";
 "settings.agentID" = "ID agenta:";
@@ -127,3 +126,15 @@
 "transcription.language.en-US" = "Angielski";
 "speaker.me" = "Ja";
 "speaker.caller" = "Rozmówcy";
+
+/* Settings panes */
+"settings.pane.voiceAgent" = "Agent głosowy";
+"settings.pane.transcription" = "Transkrypcja";
+"settings.transcription.engine" = "Silnik:";
+"settings.transcription.language" = "Język:";
+"settings.transcription.whisperURL" = "Serwer Whisper:";
+"settings.transcription.permission" = "Zgoda:";
+"settings.transcription.permissionOK" = "✓ Rozpoznawanie mowy dozwolone.";
+"settings.transcription.permissionAsk" = "macOS jeszcze nie pytał o zgodę na rozpoznawanie mowy.";
+"settings.transcription.permissionRequest" = "Poproś o zgodę";
+"settings.transcription.permissionOpen" = "Otwórz Ustawienia systemowe";
