@@ -16,6 +16,7 @@ TESTS=(
     "silence_segmenter_test: $A/SilenceSegmenter.swift"
     "whisper_test: $A/WhisperTranscriber.swift $A/SilenceSegmenter.swift $A/SpeechTranscriber.swift $A/TranscriptModel.swift $A/Log.swift"
     "scribe_test: $A/ScribeTranscriber.swift $A/SilenceSegmenter.swift $A/SpeechTranscriber.swift $A/TranscriptModel.swift $A/Log.swift"
+    "transcription_settings_test: $A/TranscriptionSettings.swift $A/AppleSpeechTranscriber.swift $A/WhisperTranscriber.swift $A/ScribeTranscriber.swift $A/SilenceSegmenter.swift $A/SpeechTranscriber.swift $A/TranscriptModel.swift $A/Log.swift $A/Strings.swift"
 )
 
 OUT=build/tests

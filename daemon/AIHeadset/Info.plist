@@ -45,5 +45,7 @@
 	     to get a TCC prompt instead of silently failing (plan 5.5). -->
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AI Headset routes your microphone through the virtual headset device so apps like Zoom and Teams can use it.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>AI Headset transcribes your calls on this Mac so you can follow, summarize and fact-check them.</string>
 </dict>
 </plist>

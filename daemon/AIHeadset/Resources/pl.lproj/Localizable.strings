@@ -111,3 +111,19 @@
 "settings.healthOK" = "✓ Konfiguracja agenta jest poprawna.";
 "settings.healthChecking" = "Sprawdzanie…";
 "settings.healthNotConfigured" = "Wybierz agenta, żeby sprawdzić jego konfigurację.";
+
+/* Transcription */
+"transcription.engine.apple" = "Apple — na tym Macu";
+"transcription.engine.scribe" = "ElevenLabs Scribe — w chmurze";
+"transcription.engine.whisper" = "Whisper — lokalny serwer";
+"transcription.privacy.apple" = "Dźwięk nie opuszcza tego Maca.";
+"transcription.privacy.scribe" = "Dźwięk jest wysyłany do ElevenLabs.";
+"transcription.privacy.whisper" = "Dźwięk idzie do serwera Whisper pod podanym adresem.";
+"transcription.error.speechDenied" = "Brak zgody na rozpoznawanie mowy — włącz ją w Ustawieniach systemowych.";
+"transcription.error.language" = "Ten język nie jest obsługiwany przez rozpoznawanie mowy Apple.";
+"transcription.error.onDevice" = "Rozpoznawanie mowy na urządzeniu jest niedostępne dla tego języka.";
+"transcription.error.noKey" = "Scribe potrzebuje klucza API ElevenLabs (Ustawienia → Agent głosowy).";
+"transcription.language.pl-PL" = "Polski";
+"transcription.language.en-US" = "Angielski";
+"speaker.me" = "Ja";
+"speaker.caller" = "Rozmówcy";
