@@ -138,3 +138,14 @@
 "settings.transcription.permissionAsk" = "macOS has not asked for speech recognition permission yet.";
 "settings.transcription.permissionRequest" = "Request Permission";
 "settings.transcription.permissionOpen" = "Open System Settings";
+
+/* Transcript window */
+"transcript.title" = "Transcriber";
+"transcript.settings" = "Transcription Settings";
+"transcript.status.running" = "Listening · %@";
+"transcript.status.paused" = "Transcription paused";
+"transcript.pause" = "Pause Transcription";
+"transcript.resume" = "Resume Transcription";
+"transcript.empty.listening" = "Waiting for the conversation…";
+"transcript.empty.paused" = "Transcription paused";
+"menu.transcript" = "Transcriber…";

@@ -1,11 +1,12 @@
 import AppKit
 import CoreAudio
+import Speech
 
 /// Faza 4 (plan): the menu bar UI. AGENT mode now actually starts an
 /// AgentSession (Faza 3) using the agent ID/API key from Settings.
-/// Still missing: transcript viewer window, "Zapisz notatki" (needs an
-/// LLM API decision that hasn't been made).
-final class MenuBarController: NSObject, NSMenuDelegate {
+/// Owns the transcription lifecycle too: the session follows the audio
+/// router, the transcript store outlives both.
+final class MenuBarController: NSObject, NSMenuDelegate, TranscriptionControlling {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let aggregate = AggregateDevice()
@@ -19,6 +20,15 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private var agentState: AgentConnectionState = .disconnected
     private var settingsWindowController: SettingsWindowController?
     private var agentPanel: HintWindowController?
+    /// Transkrypt żyje tyle co aplikacja: przebudowa audio wymienia sesję,
+    /// nie magazyn, więc okno nie traci rozmowy.
+    private let transcriptStore = TranscriptStore()
+    private var transcriptionSession: TranscriptionSession?
+    private var transcriptJournal: Transcript?
+    private var transcriptWindow: TranscriptWindowController?
+    private(set) var transcriptionStatus: TranscriptionStatus = .paused {
+        didSet { transcriptWindow?.statusDidChange() }
+    }
     private var availableAgents: [AgentConfigClient.AgentSummary] = []
     private var agentsLoading = false
     private var agentListError: String?
@@ -116,6 +126,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     func shutdown() {
         hotkey.unregisterAll()
         agentSession?.stop()
+        stopTranscription()
+        transcriptJournal?.close()
         router?.stop()
         try? aggregate.destroy()
     }
@@ -183,6 +195,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         // NIE ⌘⇧A -- tamten jest globalnym przełącznikiem PASS↔AGENT i
         // przechwytuje zdarzenie, zanim dojdzie do menu.
         menu.addItem(.separator())
+        let transcriptItem = NSMenuItem(title: L("menu.transcript"), action: #selector(openTranscriptWindow), keyEquivalent: "t")
+        transcriptItem.keyEquivalentModifierMask = [.command, .shift]
+        transcriptItem.target = self
+        menu.addItem(transcriptItem)
         let panelItem = NSMenuItem(title: L("menu.agentPanel"), action: #selector(openAgentPanel), keyEquivalent: "h")
         panelItem.keyEquivalentModifierMask = [.command, .shift]
         panelItem.target = self
@@ -700,7 +716,64 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    private func restartTranscription() {}
+    // MARK: - Transkrypcja
+
+    private func startTranscription() {
+        let settings = TranscriptionSettings()
+        guard settings.isEnabled else {
+            transcriptionStatus = .paused
+            return
+        }
+        guard let router else { return }
+        if settings.engine == .apple, SFSpeechRecognizer.authorizationStatus() == .notDetermined {
+            // Pytamy w kontekście: dopiero gdy transkrypcja Apple ma ruszyć.
+            AppleSpeechTranscriber.requestAuthorization { [weak self] _ in self?.restartTranscription() }
+            return
+        }
+        do {
+            if transcriptJournal == nil { transcriptJournal = try? Transcript() }
+            let session = try TranscriptionSession(router: router, store: transcriptStore, journal: transcriptJournal) { speaker in
+                try TranscriberFactory.make(speaker, settings: settings, elevenLabsKey: AgentSettings.apiKey)
+            }
+            session.onError = { [weak self] _, error in
+                self?.transcriptionStatus = .unavailable(String(describing: error))
+            }
+            try session.start()
+            transcriptionSession = session
+            transcriptionStatus = .running(settings.engine)
+        } catch {
+            Log.error("transkrypcja nie wystartowała: \(error)")
+            transcriptionStatus = .unavailable(String(describing: error))
+        }
+    }
+
+    private func stopTranscription() {
+        transcriptionSession?.stop()
+        transcriptionSession = nil
+    }
+
+    private func restartTranscription() {
+        stopTranscription()
+        startTranscription()
+    }
+
+    func setTranscriptionPaused(_ paused: Bool) {
+        TranscriptionSettings().isEnabled = !paused
+        restartTranscription()
+    }
+
+    func openTranscriptionSettings() {
+        openSettings()
+        settingsWindowController?.show(pane: .transcription)
+    }
+
+    @objc private func openTranscriptWindow() {
+        if transcriptWindow == nil {
+            transcriptWindow = TranscriptWindowController(store: transcriptStore, controller: self)
+        }
+        transcriptWindow?.show()
+        NSApp.activate(ignoringOtherApps: true)
+    }
 
     /// Zapamiętywane tylko przy jawnym wyborze z menu -- domyślne
     /// systemu mają się dalej zmieniać razem z systemem.
@@ -729,6 +802,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     /// recreating the aggregate (100-200ms of silence expected) --
     /// mute first so this never lands mid-sentence.
     private func rebuildAudio(outputUID: String, inputUID: String?, mode: RouterMode) {
+        stopTranscription()
         router?.mode = .mute
         stopAgentSession()
         router?.stop()
@@ -742,6 +816,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             outputDeviceUID = outputUID
             inputDeviceUID = inputUID
             status = .active
+            startTranscription()
             if mode == .agent {
                 startAgentSessionIfNeeded()
             }

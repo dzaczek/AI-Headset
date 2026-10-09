@@ -138,3 +138,14 @@
 "settings.transcription.permissionAsk" = "macOS jeszcze nie pytał o zgodę na rozpoznawanie mowy.";
 "settings.transcription.permissionRequest" = "Poproś o zgodę";
 "settings.transcription.permissionOpen" = "Otwórz Ustawienia systemowe";
+
+/* Transcript window */
+"transcript.title" = "Transkryptor";
+"transcript.settings" = "Ustawienia transkrypcji";
+"transcript.status.running" = "Słucham · %@";
+"transcript.status.paused" = "Transkrypcja wstrzymana";
+"transcript.pause" = "Wstrzymaj transkrypcję";
+"transcript.resume" = "Wznów transkrypcję";
+"transcript.empty.listening" = "Czekam na rozmowę…";
+"transcript.empty.paused" = "Transkrypcja wstrzymana";
+"menu.transcript" = "Transkryptor…";
