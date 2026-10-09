@@ -10,6 +10,9 @@ import Foundation
 /// (a więc i okno) zostaje.
 final class TranscriptionSession {
     var onError: ((TranscriptSpeaker, Error) -> Void)?
+    /// Każdy segment dostarczony do magazynu (główny wątek) -- znak, że
+    /// silnik działa, nawet jeśli wcześniej zgłosił chwilowy błąd.
+    var onSegment: ((TranscriptSegment) -> Void)?
 
     private struct Stream {
         let speaker: TranscriptSpeaker
@@ -41,8 +44,15 @@ final class TranscriptionSession {
         }
         for stream in streams {
             let speaker = stream.speaker
-            stream.transcriber.onSegment = { [weak self] segment in
-                DispatchQueue.main.async { self?.deliver(segment) }
+            // Magazyn i dziennik trzymane wprost, nie przez sesję: wynik
+            // final przychodzi też PO stop() (Apple po endAudio, Scribe po
+            // commit, Whisper z zapytania w locie), gdy sesji już nie ma
+            // -- a to zwykle ostatnie zdanie przed pauzą czy zmianą urządzenia.
+            stream.transcriber.onSegment = { [weak self, store, journal] segment in
+                DispatchQueue.main.async {
+                    Self.deliver(segment, to: store, journal: journal)
+                    self?.onSegment?(segment)
+                }
             }
             stream.transcriber.onError = { [weak self] error in
                 Log.error("transkrypcja (\(speaker.rawValue)): \(error)")
@@ -87,7 +97,7 @@ final class TranscriptionSession {
         }
     }
 
-    private func deliver(_ segment: TranscriptSegment) {
+    private static func deliver(_ segment: TranscriptSegment, to store: TranscriptStore, journal: Transcript?) {
         store.apply(segment)
         let text = segment.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if segment.isFinal, !text.isEmpty {

@@ -28,6 +28,10 @@ final class AppleSpeechTranscriber: SpeechTranscriber {
     private var task: SFSpeechRecognitionTask?
     private var segmenter = SilenceSegmenter(maxChunk: 45)
     private var stopped = true
+    /// Zadanie, do którego trafia bieżący dźwięk. Handler rozpoznawania
+    /// działa na wątku Speech, `feed` na kolejce transkrypcji -- stąd zamek.
+    private var currentTaskID = UUID()
+    private let lock = NSLock()
 
     init(language: String, speaker: TranscriptSpeaker) {
         self.language = language
@@ -60,26 +64,33 @@ final class AppleSpeechTranscriber: SpeechTranscriber {
         }
         guard recognizer.supportsOnDeviceRecognition else { throw AppleSpeechError.onDeviceUnavailable }
         self.recognizer = recognizer
-        stopped = false
+        lock.lock(); stopped = false; lock.unlock()
         beginTask()
     }
 
     func feed(pcm16Mono16k: Data) {
-        guard !stopped, let buffer = Self.makeBuffer(pcm16Mono16k) else { return }
-        request?.append(buffer)
+        guard let buffer = Self.makeBuffer(pcm16Mono16k) else { return }
+        lock.lock()
+        let request = stopped ? nil : self.request
+        lock.unlock()
+        guard let request else { return }
+        request.append(buffer)
         if !segmenter.append(pcm16Mono16k).isEmpty {
             // Koniec wypowiedzi: zamknij zadanie (przyjdzie wynik final)
             // i od razu otwórz następne na dalszy dźwięk.
-            request?.endAudio()
+            request.endAudio()
             beginTask()
         }
     }
 
     func stop() {
+        lock.lock()
         stopped = true
-        request?.endAudio()
-        request = nil
+        let request = self.request
+        self.request = nil
         task = nil
+        lock.unlock()
+        request?.endAudio() // wynik final dotrze mimo stop -- callbacki są skopiowane w beginTask
     }
 
     private func beginTask() {
@@ -89,19 +100,42 @@ final class AppleSpeechTranscriber: SpeechTranscriber {
         request.shouldReportPartialResults = true
         request.addsPunctuation = true
         let id = UUID()
-        let start = Date()
         let speaker = self.speaker
-        task = recognizer.recognitionTask(with: request) { [weak self] result, error in
+        // Kopie callbacków: wynik final po stop() (endAudio) przychodzi,
+        // gdy tego obiektu może już nie być.
+        let emit = onSegment
+        let report = onError
+        // Początek wypowiedzi = pierwszy rozpoznany fragment, nie otwarcie
+        // zadania (to następuje zaraz po poprzedniej wypowiedzi i sklejało
+        // akapity oraz przesuwało godziny).
+        var speechStart: Date?
+        let task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             if let result {
-                let text = result.bestTranscription.formattedString
-                self?.onSegment?(TranscriptSegment(id: id, speaker: speaker, text: text, start: start,
-                                                   end: Date(), isFinal: result.isFinal))
-            } else if let error = error as NSError?,
-                      // 1110 = „nie wykryto mowy”, 301 = zadanie anulowane -- to nie są awarie.
-                      ![1110, 301].contains(error.code) {
-                self?.onError?(error)
+                let start = speechStart ?? Date()
+                speechStart = start
+                emit?(TranscriptSegment(id: id, speaker: speaker, text: result.bestTranscription.formattedString,
+                                        start: start, end: Date(), isFinal: result.isFinal))
+                if result.isFinal { self?.replaceTaskIfCurrent(id) }
+            } else if let error = error as NSError? {
+                // 1110 = „nie wykryto mowy”, 301 = zadanie anulowane -- to nie są awarie.
+                if ![1110, 301].contains(error.code) { report?(error) }
+                self?.replaceTaskIfCurrent(id)
             }
         }
+        lock.lock()
+        currentTaskID = id
         self.request = request
+        self.task = task
+        lock.unlock()
+    }
+
+    /// Zadanie skończyło się samo (np. długa cisza na linii), a dźwięk
+    /// nadal do niego trafia -- otwórz następne, inaczej kolejna
+    /// wypowiedź by przepadła.
+    private func replaceTaskIfCurrent(_ id: UUID) {
+        lock.lock()
+        let shouldReplace = !stopped && currentTaskID == id
+        lock.unlock()
+        if shouldReplace { beginTask() }
     }
 }

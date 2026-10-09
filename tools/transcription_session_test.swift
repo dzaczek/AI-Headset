@@ -47,13 +47,47 @@ fakes[.caller]?.onSegment?(TranscriptSegment(id: UUID(), speaker: .caller, text:
 RunLoop.main.run(until: Date().addingTimeInterval(0.2))
 check(store.paragraphs.count == 1, "segment w magazynie")
 
+// Każdy dostarczony segment przechodzi przez onSegment -- po nim status
+// wraca z „niedostępna” do „słucham” (przegląd #2).
+var hookCalls = 0
+session.onSegment = { _ in hookCalls += 1 }
+fakes[.me]?.onSegment?(TranscriptSegment(id: UUID(), speaker: .me, text: "Cześć",
+                                         start: Date(), end: Date(), isFinal: true))
+RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+check(hookCalls == 1, "onSegment wywołany")
+
 // Przebudowa audio: stop starej sesji, nowa na nowym routerze, magazyn zostaje.
 session.stop()
 check(fakes[.caller]?.stopped == true && fakes[.me]?.stopped == true, "oba silniki zatrzymane")
+
+// Wynik final przychodzący PO stop() (Apple po endAudio, Scribe po commit,
+// Whisper z zapytania w locie) nie może zginąć, także gdy sesji już nikt
+// nie trzyma (przegląd #4).
+do {
+    var lateFake: FakeTranscriber?
+    do {
+        let shortLived = try TranscriptionSession(router: router, store: store, journal: nil) { _ in
+            let fake = FakeTranscriber()
+            if lateFake == nil { lateFake = fake }
+            return fake
+        }
+        try shortLived.start()
+        shortLived.stop()
+    } // sesja zwolniona, jak po rebuildAudio
+    let paragraphsBefore = store.paragraphs.count
+    DispatchQueue.global().async {
+        lateFake?.onSegment?(TranscriptSegment(id: UUID(), speaker: .caller, text: "Ostatnie zdanie.",
+                                               start: Date().addingTimeInterval(10), end: Date().addingTimeInterval(11),
+                                               isFinal: true))
+    }
+    RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+    check(store.paragraphs.count == paragraphsBefore + 1, "spóźniony final trafił do magazynu")
+}
+let paragraphsBeforeRebuild = store.paragraphs.count
 let router2 = AudioRouter(aggregateDeviceID: 0, sampleRate: 44100)
 let session2 = try TranscriptionSession(router: router2, store: store, journal: nil) { _ in FakeTranscriber() }
 try session2.start()
-check(store.paragraphs.count == 1, "transkrypt przeżył przebudowę")
+check(store.paragraphs.count == paragraphsBeforeRebuild, "transkrypt przeżył przebudowę")
 session2.stop()
 
 if failures > 0 { exit(1) }

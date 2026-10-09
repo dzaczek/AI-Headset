@@ -62,12 +62,24 @@ final class ScribeTranscriber: SpeechTranscriber {
     }
 
     func start() throws {
-        stopped = false
+        lock.lock(); stopped = false; lock.unlock()
         connect()
     }
 
+    /// `task` i `stopped` są czytane z kolejki transkrypcji, ponownego
+    /// połączenia (wątek globalny) i głównego -- zawsze pod zamkiem.
+    private var liveTask: URLSessionWebSocketTask? {
+        lock.lock(); defer { lock.unlock() }
+        return stopped ? nil : task
+    }
+
+    private var isStopped: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return stopped
+    }
+
     func feed(pcm16Mono16k: Data) {
-        guard let task, !stopped else { return }
+        guard let task = liveTask else { return }
         task.send(.string(ScribeProtocol.audioMessage(pcm16Mono16k, commit: false))) { _ in }
         if !segmenter.append(pcm16Mono16k).isEmpty {
             task.send(.string(ScribeProtocol.audioMessage(Data(), commit: true))) { _ in }
@@ -75,17 +87,27 @@ final class ScribeTranscriber: SpeechTranscriber {
     }
 
     func stop() {
+        lock.lock()
         stopped = true
+        let task = self.task
+        self.task = nil
+        lock.unlock()
+        // Commit zamyka bieżącą wypowiedź; gniazdo zamykamy dopiero po
+        // chwili, żeby zdążył przyjść committed_transcript z ostatnim zdaniem.
         task?.send(.string(ScribeProtocol.audioMessage(Data(), commit: true))) { _ in }
-        task?.cancel(with: .goingAway, reason: nil)
-        task = nil
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1.5) {
+            task?.cancel(with: .goingAway, reason: nil)
+        }
     }
 
     private func connect() {
         var request = URLRequest(url: ScribeProtocol.endpoint)
         request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
         let task = session.webSocketTask(with: request)
+        lock.lock()
+        guard !stopped else { lock.unlock(); return }
         self.task = task
+        lock.unlock()
         task.resume()
         receive(on: task)
     }
@@ -95,12 +117,12 @@ final class ScribeTranscriber: SpeechTranscriber {
             guard let self else { return }
             switch result {
             case .failure(let error):
-                guard !self.stopped else { return }
+                guard !self.isStopped else { return }
                 self.onError?(error)
-                // Jedna próba ponownego połączenia po 2 s -- zerwane
-                // połączenie w trakcie rozmowy nie może zakończyć transkrypcji.
+                // Ponowne połączenie po 2 s -- zerwane połączenie w trakcie
+                // rozmowy nie może zakończyć transkrypcji.
                 DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [weak self] in
-                    guard let self, !self.stopped else { return }
+                    guard let self, !self.isStopped else { return }
                     self.connect()
                 }
             case .success(let message):

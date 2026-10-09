@@ -738,6 +738,13 @@ final class MenuBarController: NSObject, NSMenuDelegate, TranscriptionControllin
             session.onError = { [weak self] _, error in
                 self?.transcriptionStatus = .unavailable(String(describing: error))
             }
+            // Błąd bywa chwilowy (jedno zapytanie do Whispera, zerwane i
+            // odnowione połączenie Scribe) -- kolejny segment znaczy, że
+            // silnik znowu działa.
+            session.onSegment = { [weak self] _ in
+                guard let self, case .unavailable = self.transcriptionStatus else { return }
+                self.transcriptionStatus = .running(settings.engine)
+            }
             try session.start()
             transcriptionSession = session
             transcriptionStatus = .running(settings.engine)
