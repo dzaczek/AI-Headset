@@ -56,6 +56,10 @@ trybu** i świeci na fioletowo, gdy agent właśnie mówi Twoim kanałem.
 
 ## Co potrafi
 
+- **Transkrypcja na żywo** — obie strony rozmowy osobno („Ja” / „Rozmówcy”), w każdym
+  trybie. Okno **Transkryptor…** (`⌘⇧T`). Silnik do wyboru w Ustawieniach → Transkrypcja:
+  Apple (na tym Macu), ElevenLabs Scribe (chmura) albo lokalny serwer Whisper
+  (`whisper-server -m model.bin -l pl --port 8080` z whisper.cpp)
 - **Podpowiedzi na żywo** — małe pływające okno nad Teamsem; wpisujesz „klient
   pyta o cenę, nie obiecuj", agent uwzględnia to od następnej wypowiedzi, bez
   przerywania bieżącej

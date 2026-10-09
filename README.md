@@ -56,6 +56,10 @@ turns purple while the agent is actually speaking on your channel.
 
 ## What it does
 
+- **Live transcription** — both sides of the call separately ("Me" / "Others"), in every
+  mode. Open **Transcriber…** (`⌘⇧T`). Pick the engine in Settings → Transcription:
+  Apple (on this Mac), ElevenLabs Scribe (cloud) or a local Whisper server
+  (`whisper-server -m model.bin -l en --port 8080` from whisper.cpp)
 - **Live hints** — a small floating window above Teams; you type "client is
   asking about pricing, don't commit" and the agent takes it into account from
   its next turn, without interrupting what it is saying
