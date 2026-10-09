@@ -60,10 +60,17 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     override init() {
-        // Nigdy nie bierzemy własnego urządzenia jako "fizycznego"
-        // punktu monitorowania -- patrz AudioDeviceUtil.isOwnDevice.
-        outputDeviceUID = AudioDeviceUtil.physicalDefaultOutputUID() ?? ""
-        inputDeviceUID = AudioDeviceUtil.physicalDefaultInputUID()
+        // Najpierw to, co użytkownik sam wybrał ostatnio (jeśli jest
+        // podłączone), potem domyślne systemu. Nigdy nie bierzemy
+        // własnego urządzenia jako "fizycznego" punktu monitorowania --
+        // patrz AudioDeviceUtil.isOwnDevice.
+        let defaults = UserDefaults.standard
+        outputDeviceUID = defaults.string(forKey: Self.outputDeviceKey)
+            .flatMap { AudioDeviceUtil.isAvailablePhysicalDevice($0) ? $0 : nil }
+            ?? AudioDeviceUtil.physicalDefaultOutputUID() ?? ""
+        inputDeviceUID = defaults.string(forKey: Self.inputDeviceKey)
+            .flatMap { AudioDeviceUtil.isAvailablePhysicalDevice($0) ? $0 : nil }
+            ?? AudioDeviceUtil.physicalDefaultInputUID()
         super.init()
 
         buildStatusItem()
@@ -692,13 +699,20 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    /// Zapamiętywane tylko przy jawnym wyborze z menu -- domyślne
+    /// systemu mają się dalej zmieniać razem z systemem.
+    private static let outputDeviceKey = "outputDeviceUID"
+    private static let inputDeviceKey = "inputDeviceUID"
+
     @objc private func selectOutputDevice(_ sender: NSMenuItem) {
         guard let uid = sender.representedObject as? String else { return }
+        UserDefaults.standard.set(uid, forKey: Self.outputDeviceKey)
         rebuildAudio(outputUID: uid, inputUID: inputDeviceUID, mode: router?.mode ?? .pass)
     }
 
     @objc private func selectInputDevice(_ sender: NSMenuItem) {
         guard let uid = sender.representedObject as? String else { return }
+        UserDefaults.standard.set(uid, forKey: Self.inputDeviceKey)
         rebuildAudio(outputUID: outputDeviceUID, inputUID: uid, mode: router?.mode ?? .pass)
     }
 

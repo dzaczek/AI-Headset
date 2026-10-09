@@ -24,10 +24,52 @@ enum AudioDeviceUtil {
         return firstPhysicalDeviceUID(scope: kAudioObjectPropertyScopeOutput)
     }
 
-    /// System default input, but never one of ours.
+    /// System default input, but never one of ours -- and not a
+    /// Bluetooth headset's mic when the Mac has a built-in one. Opening
+    /// a Bluetooth mic flips the headset from A2DP to HFP mid-flight;
+    /// that renegotiation, landing while the aggregate is being built,
+    /// once hung coreaudiod outright ("transport update: timed out")
+    /// and silenced the whole system until it was killed. A Bluetooth
+    /// mic picked explicitly in the menu is still honored -- this only
+    /// governs the default.
     static func physicalDefaultInputUID() -> String? {
-        if let uid = defaultInputDeviceUID(), !isOwnDevice(uid) { return uid }
+        if let uid = defaultInputDeviceUID(), !isOwnDevice(uid) {
+            if isBluetooth(uid), let builtIn = builtInInputUID() { return builtIn }
+            return uid
+        }
         return firstPhysicalDeviceUID(scope: kAudioObjectPropertyScopeInput)
+    }
+
+    /// Present right now and not one of ours -- used to decide whether
+    /// a remembered device can be restored.
+    static func isAvailablePhysicalDevice(_ uid: String) -> Bool {
+        !isOwnDevice(uid) && translateUIDToDevice(uid) != nil
+    }
+
+    static func isBluetooth(_ uid: String) -> Bool {
+        guard let id = translateUIDToDevice(uid) else { return false }
+        let transport = transportType(for: id)
+        return transport == kAudioDeviceTransportTypeBluetooth || transport == kAudioDeviceTransportTypeBluetoothLE
+    }
+
+    static func builtInInputUID() -> String? {
+        for id in allDeviceIDs() where transportType(for: id) == kAudioDeviceTransportTypeBuiltIn {
+            guard channelCount(for: id, scope: kAudioObjectPropertyScopeInput) > 0,
+                  let uid = deviceUID(for: id), !isOwnDevice(uid) else { continue }
+            return uid
+        }
+        return nil
+    }
+
+    static func transportType(for deviceID: AudioDeviceID) -> UInt32 {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        var transport: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &transport) == noErr else { return 0 }
+        return transport
     }
 
     static func firstPhysicalDeviceUID(scope: AudioObjectPropertyScope) -> String? {
