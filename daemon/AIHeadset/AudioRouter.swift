@@ -30,6 +30,15 @@ final class AudioRouter {
     let uplinkBuffer = RingBuffer(frameCapacity: AIHeadsetConfig.uplinkCapacityFrames,
                                    channels: AIHeadsetConfig.channelCount)
 
+    /// Transkrypcja słucha w każdym trybie, obu stron osobno -- dzięki
+    /// temu wiadomo, kto mówi, bez rozpoznawania głosów. Mono, bo
+    /// rozpoznawanie mowy i tak pracuje na jednym kanale; mikrofony bywają
+    /// mono, strona rozmówców jest stereo.
+    let callerTranscriptTap = RingBuffer(frameCapacity: AIHeadsetConfig.transcriptTapCapacityFrames, channels: 1)
+    let micTranscriptTap = RingBuffer(frameCapacity: AIHeadsetConfig.transcriptTapCapacityFrames, channels: 1)
+    /// Prealokowany: wątek IO nie może alokować.
+    private var transcriptScratch = [Float](repeating: 0, count: 8192)
+
     /// AGENT mode's Bridge.out source. ElevenLabsClient (Faza 3) fills
     /// this from decoded `audio` events; `interruption` events should
     /// call `agentPlaybackBuffer.clear()`.
@@ -176,6 +185,9 @@ final class AudioRouter {
             }
         }
         guard let bridgeOut = output.last else { return }
+
+        // Transkrypcja: rozmówcy (Bridge.in) i mikrofon, w każdym trybie.
+        feedTranscriptTaps(caller: input.last, mic: input.count > 1 ? input[0] : nil)
 
         var bridgeInRMS: Float = 0
         var physicalOutRMS: Float = 0
@@ -361,6 +373,33 @@ final class AudioRouter {
     /// zestaw Bluetooth w profilu HFP), podczas gdy Bridge jest zawsze
     /// stereo. Wpisanie mono w stereo bajt w bajt daje szum i połowę
     /// bufora ciszy.
+    /// Wywoływane z wątku IO; osobno dostępne dla testów.
+    func feedTranscriptTaps(caller: AudioBuffer?, mic: AudioBuffer?) {
+        if let caller { writeMono(caller, to: callerTranscriptTap) }
+        if let mic { writeMono(mic, to: micTranscriptTap) }
+    }
+
+    private func writeMono(_ buffer: AudioBuffer, to tap: RingBuffer) {
+        guard let data = buffer.mData else { return }
+        let channelCount = Int(buffer.mNumberChannels)
+        guard channelCount > 0 else { return }
+        let src = data.assumingMemoryBound(to: Float.self)
+        let frames = min(Int(buffer.mDataByteSize) / (channelCount * MemoryLayout<Float>.size), transcriptScratch.count)
+        guard frames > 0 else { return }
+        if channelCount == 1 {
+            tap.write(src, frameCount: frames)
+            return
+        }
+        transcriptScratch.withUnsafeMutableBufferPointer { dst in
+            for i in 0..<frames {
+                var sum: Float = 0
+                for ch in 0..<channelCount { sum += src[i * channelCount + ch] }
+                dst[i] = sum / Float(channelCount)
+            }
+            tap.write(dst.baseAddress!, frameCount: frames)
+        }
+    }
+
     private func copy(from source: AudioBuffer, to destination: AudioBuffer) {
         guard let srcData = source.mData, let dstData = destination.mData else { return }
         let srcChannels = Int(source.mNumberChannels)

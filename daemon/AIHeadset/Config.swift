@@ -26,6 +26,10 @@ enum AIHeadsetConfig {
     /// starve while it drains this.
     static let uplinkCapacityFrames = 16384 // ~341ms @ 48kHz
 
+    /// Bufory transkrypcji (mono): pompa czyta je co ~50 ms, więc
+    /// ~1,4 s zapasu @ 48 kHz wystarcza z nawiązką.
+    static let transcriptTapCapacityFrames = 65536
+
     /// Plan 6.5: consent-to-record announcement. A few seconds is
     /// plenty for a short sentence; rounded up to a power of two.
     static let announcementCapacityFrames = 262144 // ~5.5s @ 48kHz

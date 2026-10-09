@@ -11,6 +11,7 @@ cd "$(dirname "$0")/.."
 A=daemon/AIHeadset
 TESTS=(
     "transcript_store_test: $A/TranscriptModel.swift $A/TranscriptStore.swift"
+    "router_tap_test: $A/AudioRouter.swift $A/RingBuffer.swift $A/Config.swift $A/Log.swift $A/AggregateDevice.swift $A/AudioDeviceUtil.swift"
 )
 
 OUT=build/tests
