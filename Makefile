@@ -24,7 +24,7 @@ DAEMON_BINARY     := $(DAEMON_CONTENTS)/MacOS/$(DAEMON_NAME)
 DAEMON_SRC        := $(wildcard daemon/AIHeadset/*.swift)
 DAEMON_FRAMEWORKS := -framework AppKit -framework ApplicationServices -framework CoreAudio -framework AudioToolbox -framework Foundation
 
-.PHONY: driver daemon run logs dist clean install install-app uninstall
+.PHONY: driver daemon run logs dist clean install install-app uninstall test
 
 driver: $(BINARY)
 
@@ -130,3 +130,8 @@ install-app: daemon
 uninstall:
 	sudo rm -rf "/Library/Audio/Plug-Ins/HAL/$(DRIVER_NAME).driver"
 	sudo killall coreaudiod
+
+# Testy jednostkowe (bez sieci i bez urządzeń audio). Lista w
+# tools/run_tests.sh.
+test:
+	./tools/run_tests.sh
